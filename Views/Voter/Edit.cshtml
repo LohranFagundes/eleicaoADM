@@ -1,0 +1,59 @@
+@model ElectionAdminPanel.Web.Models.VoterModel
+
+@{ 
+    ViewData["Title"] = "Editar Eleitor";
+}
+
+<div class="container-fluid mt-4">
+    <h2 class="mb-4"><i class="bi bi-pencil-square me-2"></i>@ViewData["Title"]</h2>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <form asp-action="Edit" method="post">
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                <input type="hidden" asp-for="Id" />
+
+                <div class="mb-3">
+                    <label asp-for="Name" class="form-label"></label>
+                    <input asp-for="Name" class="form-control" readonly /> @* Name is read-only as per request *@
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Cpf" class="form-label"></label>
+                    <input asp-for="Cpf" class="form-control" readonly /> @* CPF is read-only as per request *@
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Email" class="form-label"></label>
+                    <input asp-for="Email" class="form-control" />
+                    <span asp-validation-for="Email" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Phone" class="form-label"></label>
+                    <input asp-for="Phone" class="form-control" />
+                    <span asp-validation-for="Phone" class="text-danger"></span>
+                </div>
+
+                <div class="form-check mb-3">
+                    <input asp-for="IsActive" class="form-check-input" disabled /> @* Status is read-only *@
+                    <label asp-for="IsActive" class="form-check-label"></label>
+                </div>
+
+                <div class="form-check mb-3">
+                    <input asp-for="IsVerified" class="form-check-input" disabled /> @* Status is read-only *@
+                    <label asp-for="IsVerified" class="form-check-label"></label>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-save me-2"></i>Salvar</button>
+                    <a asp-action="List" class="btn btn-secondary"><i class="bi bi-arrow-left-circle me-2"></i>Voltar para a Lista</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

@@ -1,0 +1,97 @@
+/* Estilos para funcionalidade de eleições lacradas */
+
+/* Estilos para elementos desabilitados quando há eleições lacradas */
+.disabled[aria-disabled="true"] {
+    opacity: 0.5 !important;
+    cursor: not-allowed !important;
+    text-decoration: none !important;
+    background-color: #f8f9fa !important;
+    border-color: #dee2e6 !important;
+    color: #6c757d !important;
+}
+
+.disabled[aria-disabled="true"]:hover {
+    opacity: 0.5 !important;
+    cursor: not-allowed !important;
+    text-decoration: none !important;
+}
+
+.sealed-election-indicator {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
+}
+
+/* Estilos para o banner de aviso */
+.alert-danger .bi-exclamation-triangle-fill {
+    color: #dc3545;
+}
+
+/* Estilo para botões de ação permitida (redefinição de senha) */
+.btn-warning[onclick*="password"], 
+.btn-warning[onclick*="Password"] {
+    opacity: 1 !important;
+    cursor: pointer !important;
+    pointer-events: auto !important;
+}
+
+/* Highlight para ações permitidas */
+.allowed-action {
+    position: relative;
+}
+
+.allowed-action::after {
+    content: "✓ Permitido";
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #28a745;
+    color: white;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-weight: bold;
+    display: none;
+}
+
+.allowed-action:hover::after {
+    display: block;
+    z-index: 1000;
+}
+
+/* Estilo para formulários desabilitados */
+form.sealed-disabled {
+    pointer-events: none;
+    opacity: 0.6;
+}
+
+form.sealed-disabled::before {
+    content: "🔒 Funcionalidade bloqueada - Eleição lacrada";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(220, 53, 69, 0.9);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-weight: bold;
+    z-index: 100;
+    pointer-events: none;
+}
+
+/* Estilos para tabelas com ações restritas */
+.table tbody tr.sealed-restricted {
+    background-color: #f8f9fa;
+    opacity: 0.7;
+}
+
+.table tbody tr.sealed-restricted .btn-group .btn:not(.btn-warning) {
+    opacity: 0.3;
+    cursor: not-allowed;
+    pointer-events: none;
+}

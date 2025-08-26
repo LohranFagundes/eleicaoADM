@@ -1,0 +1,110 @@
+@model ElectionAdminPanel.Web.Models.ElectionModel
+
+@{ 
+    ViewData["Title"] = "Criar Nova Eleição";
+}
+
+<div class="container-fluid mt-4">
+    <h2 class="mb-4"><i class="bi bi-plus-circle me-2"></i>@ViewData["Title"]</h2>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <form asp-action="Create" method="post">
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                <div class="mb-3">
+                    <label asp-for="Title" class="form-label"></label>
+                    <input asp-for="Title" class="form-control" />
+                    <span asp-validation-for="Title" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Description" class="form-label"></label>
+                    <textarea asp-for="Description" class="form-control"></textarea>
+                    <span asp-validation-for="Description" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="CompanyId" class="form-label"></label>
+                    <select asp-for="CompanyId" class="form-select">
+                        <option value="">Selecione uma empresa</option>
+                        @if (ViewBag.Companies != null)
+                        {
+                            @foreach (var company in ViewBag.Companies)
+                            {
+                                <option value="@company.Value">@company.Text</option>
+                            }
+                        }
+                    </select>
+                    <span asp-validation-for="CompanyId" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="ElectionType" class="form-label"></label>
+                    <input asp-for="ElectionType" class="form-control" />
+                    <span asp-validation-for="ElectionType" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="StartDate" class="form-label"></label>
+                    <input asp-for="StartDate" type="datetime-local" class="form-control" />
+                    <span asp-validation-for="StartDate" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="EndDate" class="form-label"></label>
+                    <input asp-for="EndDate" type="datetime-local" class="form-control" />
+                    <span asp-validation-for="EndDate" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Timezone" class="form-label"></label>
+                    <input asp-for="Timezone" class="form-control" />
+                    <span asp-validation-for="Timezone" class="text-danger"></span>
+                </div>
+
+                <div class="form-check mb-3">
+                    <input asp-for="AllowBlankVotes" class="form-check-input" />
+                    <label asp-for="AllowBlankVotes" class="form-check-label"></label>
+                </div>
+
+                <div class="form-check mb-3">
+                    <input asp-for="AllowNullVotes" class="form-check-input" />
+                    <label asp-for="AllowNullVotes" class="form-check-label"></label>
+                </div>
+
+                <div class="form-check mb-3">
+                    <input asp-for="RequireJustification" class="form-check-input" />
+                    <label asp-for="RequireJustification" class="form-check-label"></label>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="MaxVotesPerVoter" class="form-label"></label>
+                    <input asp-for="MaxVotesPerVoter" type="number" class="form-control" />
+                    <span asp-validation-for="MaxVotesPerVoter" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="VotingMethod" class="form-label"></label>
+                    <input asp-for="VotingMethod" class="form-control" />
+                    <span asp-validation-for="VotingMethod" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="ResultsVisibility" class="form-label"></label>
+                    <input asp-for="ResultsVisibility" class="form-control" />
+                    <span asp-validation-for="ResultsVisibility" class="text-danger"></span>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-save me-2"></i>Criar</button>
+                    <a asp-action="List" class="btn btn-secondary"><i class="bi bi-arrow-left-circle me-2"></i>Voltar para a Lista</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

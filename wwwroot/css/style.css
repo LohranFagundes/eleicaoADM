@@ -1,0 +1,145 @@
+body {
+    overflow-x: hidden;
+}
+
+#wrapper {
+    display: flex;
+    width: 100%;
+    transition: all 0.3s;
+}
+
+#wrapper.toggled #sidebar-wrapper {
+    margin-left: -15rem;
+}
+
+#sidebar-wrapper {
+    min-height: 100vh;
+    width: 15rem;
+    background-color: #343a40;
+    border-right: 1px solid #dee2e6;
+    transition: all 0.3s;
+}
+
+#page-content-wrapper {
+    flex-grow: 1;
+    width: 100%;
+    transition: all 0.3s;
+}
+
+#menu-toggle {
+    border: none;
+    outline: none;
+    background: none;
+    color: #007bff;
+    font-size: 1.2rem;
+    padding: 0.5rem;
+    margin-right: 1rem;
+}
+
+#menu-toggle:hover {
+    background-color: rgba(0, 123, 255, 0.1);
+}
+
+.sidebar-heading {
+    padding: 0.875rem 1.25rem;
+    font-size: 1.2rem;
+}
+
+.list-group-item {
+    border: none;
+    padding: 0.875rem 1.25rem;
+}
+
+.list-group-item.active {
+    background-color: #0056b3 !important;
+}
+
+.list-group-item:hover {
+    background-color: #0056b3;
+}
+
+.sidebar-footer {
+    margin-top: auto;
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+
+/* Existing styles */
+.card {
+    border-radius: 0.75rem;
+}
+
+.btn-primary {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+.btn-primary:hover {
+    background-color: #0056b3;
+    border-color: #0056b3;
+}
+
+.alert-info {
+    background-color: #e0f7fa;
+    border-color: #b2ebf2;
+    color: #006064;
+}
+
+/* Dashboard specific styles */
+.dashboard-card {
+    border: 1px solid #e0e0e0;
+    transition: all 0.3s ease;
+}
+
+.dashboard-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.eleitores-card .bi {
+    color: #007bff;
+}
+
+.cargos-card .bi {
+    color: #17a2b8;
+}
+
+.candidatos-card .bi {
+    color: #28a745;
+}
+
+.votos-card .bi {
+    color: #ffc107;
+}
+
+.action-card {
+    border: 1px solid #e0e0e0;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.action-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.list-group-item-action {
+    color: #adb5bd;
+}
+
+.list-group-item-action:hover {
+    color: #fff;
+    background-color: #495057;
+}
+
+.navbar-brand {
+    font-weight: bold;
+}
+
+.dropdown-menu {
+    border-radius: 0.5rem;
+}
+
+.dropdown-item:hover {
+    background-color: #e9ecef;
+}

@@ -1,0 +1,627 @@
+@model ElectionAdminPanel.Web.Models.ElectionListResponse
+
+@{
+    ViewData["Title"] = "Gerenciar Eleições";
+    var currentPage = ViewBag.CurrentPage ?? 1;
+    var pageLimit = ViewBag.PageLimit ?? 10;
+    var statusFilter = ViewBag.StatusFilter ?? "";
+    var typeFilter = ViewBag.TypeFilter ?? "";
+    var totalPages = ViewBag.TotalPages ?? 0;
+    var totalItems = ViewBag.TotalItems ?? 0;
+    var hasNextPage = ViewBag.HasNextPage ?? false;
+    var hasPreviousPage = ViewBag.HasPreviousPage ?? false;
+}
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-list-check me-2"></i>@ViewData["Title"]</h2>
+        <button type="button" class="btn btn-primary" id="createElectionBtn" onclick="openCreateElectionModal()">
+            <i class="bi bi-plus-circle me-2"></i>Criar Nova Eleição
+        </button>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Filtros</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" action="@Url.Action("List")" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Status</label>
+                    <select name="status" class="form-select">
+                        <option value="">Todos</option>
+                        <option value="draft" selected="@(statusFilter == "draft")">Draft</option>
+                        <option value="scheduled" selected="@(statusFilter == "scheduled")">Scheduled</option>
+                        <option value="active" selected="@(statusFilter == "active")">Active</option>
+                        <option value="completed" selected="@(statusFilter == "completed")">Completed</option>
+                        <option value="cancelled" selected="@(statusFilter == "cancelled")">Cancelled</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Tipo</label>
+                    <select name="type" class="form-select">
+                        <option value="">Todos</option>
+                        <option value="internal" selected="@(typeFilter == "internal")">Internal</option>
+                        <option value="external" selected="@(typeFilter == "external")">External</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Itens por página</label>
+                    <select name="limit" class="form-select">
+                        <option value="10" selected="@(pageLimit == 10)">10</option>
+                        <option value="20" selected="@(pageLimit == 20)">20</option>
+                        <option value="50" selected="@(pageLimit == 50)">50</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-outline-primary me-2">
+                        <i class="bi bi-search"></i> Filtrar
+                    </button>
+                    <a href="@Url.Action("List")" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-circle"></i> Limpar
+                    </a>
+                </div>
+                <input type="hidden" name="page" value="@currentPage" />
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            @if (Model?.Items != null && Model.Items.Any())
+            {
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="text-muted">
+                        Mostrando @((currentPage - 1) * pageLimit + 1) a @(Math.Min(currentPage * pageLimit, totalItems)) de @totalItems eleições
+                    </span>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Título</th>
+                                <th>Tipo</th>
+                                <th>Status</th>
+                                <th>Data Início</th>
+                                <th>Data Fim</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.Items)
+                            {
+                                <tr>
+                                    <td>
+                                        <div>
+                                            <strong>@item.Title</strong>
+                                            @if (!string.IsNullOrEmpty(item.Description))
+                                            {
+                                                <br><small class="text-muted">@item.Description</small>
+                                            }
+                                        </div>
+                                    </td>
+                                    <td>@item.ElectionType</td>
+                                    <td>
+                                        <span class="badge bg-@(GetStatusColor(item.Status))">
+                                            @item.Status?.ToUpper()
+                                        </span>
+                                    </td>
+                                    <td>@item.StartDate.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td>@item.EndDate.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            @if (item.Status?.ToLower() == "sealed" || item.Status?.ToLower() == "completed")
+                                            {
+                                                <span class="badge bg-danger fs-6 px-3 py-2">
+                                                    <i class="bi bi-lock-fill me-1"></i>LACRADA
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <button class="btn btn-sm btn-warning election-edit-btn" onclick="loadElectionForEdit(@item.Id)" title="Editar">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                                <div class="btn-group" role="group">
+                                                    <button class="btn btn-sm btn-secondary dropdown-toggle" 
+                                                            type="button" data-bs-toggle="dropdown" 
+                                                            title="Alterar Status">
+                                                        <i class="bi bi-arrow-repeat"></i>
+                                                    </button>
+                                                    <ul class="dropdown-menu">
+                                                        <li><a class="dropdown-item" href="#" onclick="updateStatus(@item.Id, 'draft')">Draft</a></li>
+                                                        <li><a class="dropdown-item" href="#" onclick="updateStatus(@item.Id, 'scheduled')">Scheduled</a></li>
+                                                        <li><a class="dropdown-item" href="#" onclick="updateStatus(@item.Id, 'active')">Active</a></li>
+                                                        <li><a class="dropdown-item" href="#" onclick="updateStatus(@item.Id, 'completed')">Completed</a></li>
+                                                        <li><a class="dropdown-item" href="#" onclick="updateStatus(@item.Id, 'cancelled')">Cancelled</a></li>
+                                                    </ul>
+                                                </div>
+                                                <button class="btn btn-sm btn-danger election-delete-btn" onclick="confirmDelete(@item.Id, '@item.Title')" title="Excluir">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                @if (totalPages > 1)
+                {
+                    <nav aria-label="Paginação">
+                        <ul class="pagination justify-content-center">
+                            <li class="page-item @(!hasPreviousPage ? "disabled" : "")">
+                                <a class="page-link" href="@GetPageUrl(1)">Primeira</a>
+                            </li>
+                            <li class="page-item @(!hasPreviousPage ? "disabled" : "")">
+                                <a class="page-link" href="@GetPageUrl(currentPage - 1)">Anterior</a>
+                            </li>
+                            
+                            @for (int i = Math.Max(1, currentPage - 2); i <= Math.Min(totalPages, currentPage + 2); i++)
+                            {
+                                <li class="page-item @(i == currentPage ? "active" : "")">
+                                    <a class="page-link" href="@GetPageUrl(i)">@i</a>
+                                </li>
+                            }
+                            
+                            <li class="page-item @(!hasNextPage ? "disabled" : "")">
+                                <a class="page-link" href="@GetPageUrl(currentPage + 1)">Próxima</a>
+                            </li>
+                            <li class="page-item @(!hasNextPage ? "disabled" : "")">
+                                <a class="page-link" href="@GetPageUrl(totalPages)">Última</a>
+                            </li>
+                        </ul>
+                    </nav>
+                }
+            }
+            else
+            {
+                <div class="alert alert-info text-center" role="alert">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Nenhuma eleição encontrada com os filtros aplicados.
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Modal Criar Eleição -->
+<div class="modal fade" id="createElectionModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Nova Eleição</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createElectionForm">
+                    @Html.AntiForgeryToken()
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label">Título *</label>
+                            <input type="text" class="form-control" name="title" required maxlength="255">
+                        </div>
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label">Descrição</label>
+                            <textarea class="form-control" name="description" rows="3"></textarea>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Tipo</label>
+                            <select class="form-select" name="electionType">
+                                <option value="internal">Internal</option>
+                                <option value="external">External</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Fuso Horário</label>
+                            <input type="text" class="form-control" name="timezone" value="America/Sao_Paulo">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Data/Hora Início *</label>
+                            <input type="datetime-local" class="form-control" name="startDate" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Data/Hora Fim *</label>
+                            <input type="datetime-local" class="form-control" name="endDate" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Máx. Votos por Eleitor</label>
+                            <input type="number" class="form-control" name="maxVotesPerVoter" value="1" min="1">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Método de Votação</label>
+                            <select class="form-select" name="votingMethod">
+                                <option value="single_choice">Single Choice</option>
+                                <option value="multiple_choice">Multiple Choice</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Visibilidade Resultados</label>
+                            <select class="form-select" name="resultsVisibility">
+                                <option value="after_election">After Election</option>
+                                <option value="immediate">Immediate</option>
+                                <option value="hidden">Hidden</option>
+                            </select>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" name="allowBlankVotes" id="allowBlankVotes">
+                                <label class="form-check-label" for="allowBlankVotes">
+                                    Permitir votos em branco
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" name="allowNullVotes" id="allowNullVotes">
+                                <label class="form-check-label" for="allowNullVotes">
+                                    Permitir votos nulos
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="requireJustification" id="requireJustification">
+                                <label class="form-check-label" for="requireJustification">
+                                    Exigir justificativa
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="createElection()">Criar Eleição</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Editar Eleição -->
+<div class="modal fade" id="editElectionModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Editar Eleição</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editElectionForm">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" id="editElectionId">
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label">Título *</label>
+                            <input type="text" class="form-control" name="title" id="editTitle" required maxlength="255">
+                        </div>
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label">Descrição</label>
+                            <textarea class="form-control" name="description" id="editDescription" rows="3"></textarea>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Tipo</label>
+                            <select class="form-select" name="electionType" id="editElectionType">
+                                <option value="internal">Internal</option>
+                                <option value="external">External</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Status</label>
+                            <select class="form-select" name="status" id="editStatus">
+                                <option value="draft">Draft</option>
+                                <option value="scheduled">Scheduled</option>
+                                <option value="active">Active</option>
+                                <option value="completed">Completed</option>
+                                <option value="cancelled">Cancelled</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Fuso Horário</label>
+                            <input type="text" class="form-control" name="timezone" id="editTimezone">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Data/Hora Início *</label>
+                            <input type="datetime-local" class="form-control" name="startDate" id="editStartDate" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Data/Hora Fim *</label>
+                            <input type="datetime-local" class="form-control" name="endDate" id="editEndDate" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Máx. Votos por Eleitor</label>
+                            <input type="number" class="form-control" name="maxVotesPerVoter" id="editMaxVotes" min="1">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Método de Votação</label>
+                            <select class="form-select" name="votingMethod" id="editVotingMethod">
+                                <option value="single_choice">Single Choice</option>
+                                <option value="multiple_choice">Multiple Choice</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Visibilidade Resultados</label>
+                            <select class="form-select" name="resultsVisibility" id="editResultsVisibility">
+                                <option value="after_election">After Election</option>
+                                <option value="immediate">Immediate</option>
+                                <option value="hidden">Hidden</option>
+                            </select>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" name="allowBlankVotes" id="editAllowBlankVotes">
+                                <label class="form-check-label" for="editAllowBlankVotes">
+                                    Permitir votos em branco
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" name="allowNullVotes" id="editAllowNullVotes">
+                                <label class="form-check-label" for="editAllowNullVotes">
+                                    Permitir votos nulos
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="requireJustification" id="editRequireJustification">
+                                <label class="form-check-label" for="editRequireJustification">
+                                    Exigir justificativa
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="updateElection()">Salvar Alterações</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Modal Confirmar Exclusão -->
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Exclusão</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja excluir a eleição:</p>
+                <p><strong id="deleteElectionTitle"></strong></p>
+                <p class="text-danger">Esta ação não pode ser desfeita!</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" onclick="deleteElection()">Excluir</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@functions {
+    public string GetStatusColor(string status)
+    {
+        return status?.ToLower() switch
+        {
+            "active" => "success",
+            "draft" => "secondary", 
+            "scheduled" => "info",
+            "completed" => "primary",
+            "cancelled" => "danger",
+            _ => "secondary"
+        };
+    }
+
+    public string GetPageUrl(int page)
+    {
+        var queryParams = new List<string>();
+        queryParams.Add($"page={page}");
+        queryParams.Add($"limit={ViewBag.PageLimit ?? 10}");
+        
+        if (!string.IsNullOrEmpty(ViewBag.StatusFilter))
+            queryParams.Add($"status={ViewBag.StatusFilter}");
+            
+        if (!string.IsNullOrEmpty(ViewBag.TypeFilter))
+            queryParams.Add($"type={ViewBag.TypeFilter}");
+            
+        return Url.Action("List") + "?" + string.Join("&", queryParams);
+    }
+}
+
+@section Scripts {
+    <script>
+        let deleteElectionId = 0;
+        let editElectionId = 0;
+
+        function openCreateElectionModal() {
+            const modal = new bootstrap.Modal(document.getElementById('createElectionModal'));
+            modal.show();
+        }
+
+        async function createElection() {
+            const form = document.getElementById('createElectionForm');
+            const formData = new FormData(form);
+            
+            const data = {
+                title: formData.get('title'),
+                description: formData.get('description'),
+                electionType: formData.get('electionType'),
+                startDate: formData.get('startDate'),
+                endDate: formData.get('endDate'),
+                timezone: formData.get('timezone'),
+                allowBlankVotes: formData.has('allowBlankVotes'),
+                allowNullVotes: formData.has('allowNullVotes'),
+                requireJustification: formData.has('requireJustification'),
+                maxVotesPerVoter: parseInt(formData.get('maxVotesPerVoter')),
+                votingMethod: formData.get('votingMethod'),
+                resultsVisibility: formData.get('resultsVisibility')
+            };
+
+            try {
+                const response = await fetch('@Url.Action("Create", "Election")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    window.location.reload();
+                } else {
+                    const error = await response.text();
+                    alert('Erro ao criar eleição: ' + error);
+                }
+            } catch (error) {
+                alert('Erro de conexão: ' + error.message);
+            }
+        }
+
+        async function loadElectionForEdit(id) {
+            try {
+                const response = await fetch(`@Url.Action("Edit", "Election")/${id}`, {
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const election = await response.json();
+                    
+                    document.getElementById('editElectionId').value = election.id;
+                    document.getElementById('editTitle').value = election.title;
+                    document.getElementById('editDescription').value = election.description || '';
+                    document.getElementById('editElectionType').value = election.electionType;
+                    document.getElementById('editStatus').value = election.status;
+                    document.getElementById('editTimezone').value = election.timezone;
+                    document.getElementById('editStartDate').value = formatDateForInput(election.startDate);
+                    document.getElementById('editEndDate').value = formatDateForInput(election.endDate);
+                    document.getElementById('editMaxVotes').value = election.maxVotesPerVoter;
+                    document.getElementById('editVotingMethod').value = election.votingMethod;
+                    document.getElementById('editResultsVisibility').value = election.resultsVisibility;
+                    document.getElementById('editAllowBlankVotes').checked = election.allowBlankVotes;
+                    document.getElementById('editAllowNullVotes').checked = election.allowNullVotes;
+                    document.getElementById('editRequireJustification').checked = election.requireJustification;
+                    
+                    const editModal = new bootstrap.Modal(document.getElementById('editElectionModal'));
+                    editModal.show();
+                } else {
+                    alert('Erro ao carregar dados da eleição');
+                }
+            } catch (error) {
+                alert('Erro de conexão: ' + error.message);
+            }
+        }
+
+        async function updateElection() {
+            const form = document.getElementById('editElectionForm');
+            const formData = new FormData(form);
+            const id = formData.get('id');
+            
+            const data = {
+                title: formData.get('title'),
+                description: formData.get('description'),
+                startDate: formData.get('startDate') + ':00Z',
+                endDate: formData.get('endDate') + ':00Z',
+                status: formData.get('status')
+            };
+
+            try {
+                const response = await fetch(`@Url.Action("Edit", "Election")/${id}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    window.location.reload();
+                } else {
+                    const error = await response.text();
+                    alert('Erro ao atualizar eleição: ' + error);
+                }
+            } catch (error) {
+                alert('Erro de conexão: ' + error.message);
+            }
+        }
+
+        function confirmDelete(id, title) {
+            deleteElectionId = id;
+            document.getElementById('deleteElectionTitle').textContent = title;
+            
+            const deleteModal = new bootstrap.Modal(document.getElementById('confirmDeleteModal'));
+            deleteModal.show();
+        }
+
+        async function deleteElection() {
+            try {
+                const formData = new FormData();
+                formData.append('id', deleteElectionId);
+                formData.append('__RequestVerificationToken', $('input[name="__RequestVerificationToken"]').val());
+
+                const response = await fetch('@Url.Action("Delete", "Election")', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    window.location.reload();
+                } else {
+                    alert('Erro ao excluir eleição');
+                }
+            } catch (error) {
+                alert('Erro de conexão: ' + error.message);
+            }
+        }
+
+        async function updateStatus(id, status) {
+            if (!confirm(`Deseja alterar o status para '${status}'?`)) return;
+
+            try {
+                const response = await fetch(`@Url.Action("UpdateStatus", "Election")?id=${id}&status=${status}`, {
+                    method: 'POST',
+                    headers: {
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    }
+                });
+
+                if (response.ok) {
+                    window.location.reload();
+                } else {
+                    alert('Erro ao atualizar status');
+                }
+            } catch (error) {
+                alert('Erro de conexão: ' + error.message);
+            }
+        }
+
+        function getAuthToken() {
+            return '@(User.FindFirst("AccessToken")?.Value ?? "")';
+        }
+
+        function formatDateForInput(dateString) {
+            const date = new Date(dateString);
+            return date.toISOString().slice(0, 16);
+        }
+
+    </script>
+}

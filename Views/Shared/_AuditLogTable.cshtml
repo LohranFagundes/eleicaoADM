@@ -1,0 +1,276 @@
+@model ElectionAdminPanel.Web.Models.AuditLogListResponse
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="d-flex align-items-center">
+            <span class="badge bg-info fs-6 me-2 px-3 py-2">
+                <i class="bi bi-bar-chart me-1"></i>
+                Total: @Model.TotalItems registro@(Model.TotalItems != 1 ? "s" : "")
+            </span>
+            @if (Model.TotalPages > 0)
+            {
+                <span class="badge bg-secondary fs-6 px-3 py-2">
+                    <i class="bi bi-layers me-1"></i>
+                    Página @Model.CurrentPage de @Model.TotalPages
+                </span>
+            }
+        </div>
+    </div>
+    <div class="col-md-6 text-end">
+        <div class="btn-group" role="group">
+            <a href="@Url.Action("ExportExcel", "Report", new { userType = ViewData["UserType"], page = 1, pageSize = 1000 })" 
+               class="btn btn-outline-success">
+                <i class="bi bi-file-earmark-excel me-1"></i>Exportar Excel
+            </a>
+            <a href="@Url.Action("ExportPdf", "Report", new { userType = ViewData["UserType"], page = 1, pageSize = 1000 })" 
+               class="btn btn-outline-danger">
+                <i class="bi bi-file-earmark-pdf me-1"></i>Exportar PDF
+            </a>
+        </div>
+    </div>
+</div>
+
+@if (Model.Items != null && Model.Items.Any())
+{
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-primary">
+                <tr>
+                    <th class="text-center" style="width: 60px;">#</th>
+                    <th style="width: 100px;">Usuário</th>
+                    <th class="text-center" style="width: 100px;">Tipo</th>
+                    <th style="width: 150px;">Ação</th>
+                    <th style="width: 120px;">Entidade</th>
+                    <th style="width: 70px;">ID</th>
+                    <th>Detalhes</th>
+                    <th style="width: 140px;">Data/Hora</th>
+                    <th style="width: 120px;">IP</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var log in Model.Items)
+                {
+                    <tr class="@(log.UserType == "admin" ? "table-warning" : "")">
+                        <td class="text-center">
+                            <span class="badge bg-light text-dark">#@log.Id</span>
+                        </td>
+                        <td>
+                            <small class="text-muted">@log.UserId</small>
+                        </td>
+                        <td class="text-center">
+                            @if (log.UserType == "admin")
+                            {
+                                <span class="badge bg-danger">
+                                    <i class="bi bi-shield-fill-check me-1"></i>Admin
+                                </span>
+                            }
+                            else if (log.UserType == "voter")
+                            {
+                                <span class="badge bg-info">
+                                    <i class="bi bi-person-fill me-1"></i>Eleitor
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">
+                                    <i class="bi bi-question-circle me-1"></i>@log.UserType
+                                </span>
+                            }
+                        </td>
+                        <td>
+                            <strong class="text-@(GetActionColor(log.Action))">@log.Action</strong>
+                            @if (log.UserType == "admin")
+                            {
+                                <br><small class="text-muted">Ação Administrativa</small>
+                            }
+                        </td>
+                        <td>
+                            <span class="badge bg-outline-secondary">@log.EntityType</span>
+                        </td>
+                        <td class="text-center">
+                            @if (log.EntityId.HasValue)
+                            {
+                                <code>@log.EntityId</code>
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </td>
+                        <td>
+                            @if (!string.IsNullOrEmpty(log.Details))
+                            {
+                                if (log.Details.Length > 80)
+                                {
+                                    <div title="@log.Details" data-bs-toggle="tooltip" class="text-truncate" style="max-width: 300px;">
+                                        @log.Details
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span>@log.Details</span>
+                                }
+                            }
+                            else
+                            {
+                                <span class="text-muted">Sem detalhes</span>
+                            }
+                        </td>
+                        <td>
+                            <small>
+                                <strong>@log.Timestamp.ToString("dd/MM/yyyy")</strong><br>
+                                @log.Timestamp.ToString("HH:mm:ss")
+                            </small>
+                        </td>
+                        <td>
+                            <code class="small">@log.IpAddress</code>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else
+{
+    <div class="text-center py-5">
+        <div class="mb-3">
+            <i class="bi bi-inbox display-1 text-muted"></i>
+        </div>
+        <h5 class="text-muted">Nenhum registro encontrado</h5>
+        <p class="text-muted">Não há logs de auditoria para exibir no momento.</p>
+    </div>
+}
+
+@functions {
+    string GetActionColor(string action)
+    {
+        if (string.IsNullOrEmpty(action)) return "muted";
+        
+        var actionLower = action.ToLower();
+        
+        if (actionLower.Contains("create") || actionLower.Contains("add") || actionLower.Contains("criar"))
+            return "success";
+        if (actionLower.Contains("update") || actionLower.Contains("edit") || actionLower.Contains("atualizar"))
+            return "primary";
+        if (actionLower.Contains("delete") || actionLower.Contains("remove") || actionLower.Contains("excluir"))
+            return "danger";
+        if (actionLower.Contains("login") || actionLower.Contains("entrar"))
+            return "info";
+        if (actionLower.Contains("vote") || actionLower.Contains("votar"))
+            return "warning";
+        
+        return "dark";
+    }
+}
+
+@if (Model.TotalPages > 1)
+{
+    <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+        <div>
+            <small class="text-muted">
+                Mostrando @(((Model.CurrentPage - 1) * 10) + 1) a @(Math.Min(Model.CurrentPage * 10, Model.TotalItems)) de @Model.TotalItems registros
+            </small>
+        </div>
+        <nav aria-label="Paginação dos logs de auditoria">
+            <ul class="pagination pagination-sm mb-0">
+                @if (Model.HasPreviousPage)
+                {
+                    <li class="page-item">
+                        <a class="page-link" href="@Url.Action("Index", "Report", new { page = 1, pageSize = 10, userType = ViewData["UserType"] })" title="Primeira página">
+                            <i class="bi bi-chevron-double-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="@Url.Action("Index", "Report", new { page = Model.CurrentPage - 1, pageSize = 10, userType = ViewData["UserType"] })" title="Página anterior">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                }
+                else
+                {
+                    <li class="page-item disabled">
+                        <span class="page-link"><i class="bi bi-chevron-double-left"></i></span>
+                    </li>
+                    <li class="page-item disabled">
+                        <span class="page-link"><i class="bi bi-chevron-left"></i></span>
+                    </li>
+                }
+
+                @{
+                    int startPage = Math.Max(1, Model.CurrentPage - 2);
+                    int endPage = Math.Min(Model.TotalPages, Model.CurrentPage + 2);
+                    
+                    // Ajustar para sempre mostrar 5 páginas quando possível
+                    if (endPage - startPage < 4)
+                    {
+                        if (startPage == 1)
+                        {
+                            endPage = Math.Min(Model.TotalPages, startPage + 4);
+                        }
+                        else if (endPage == Model.TotalPages)
+                        {
+                            startPage = Math.Max(1, endPage - 4);
+                        }
+                    }
+                }
+
+                @if (startPage > 1)
+                {
+                    <li class="page-item">
+                        <a class="page-link" href="@Url.Action("Index", "Report", new { page = 1, pageSize = 10, userType = ViewData["UserType"] })">1</a>
+                    </li>
+                    @if (startPage > 2)
+                    {
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                    }
+                }
+
+                @for (int i = startPage; i <= endPage; i++)
+                {
+                    <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                        <a class="page-link" href="@Url.Action("Index", "Report", new { page = i, pageSize = 10, userType = ViewData["UserType"] })">@i</a>
+                    </li>
+                }
+
+                @if (endPage < Model.TotalPages)
+                {
+                    @if (endPage < Model.TotalPages - 1)
+                    {
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                    }
+                    <li class="page-item">
+                        <a class="page-link" href="@Url.Action("Index", "Report", new { page = Model.TotalPages, pageSize = 10, userType = ViewData["UserType"] })">@Model.TotalPages</a>
+                    </li>
+                }
+
+                @if (Model.HasNextPage)
+                {
+                    <li class="page-item">
+                        <a class="page-link" href="@Url.Action("Index", "Report", new { page = Model.CurrentPage + 1, pageSize = 10, userType = ViewData["UserType"] })" title="Próxima página">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="@Url.Action("Index", "Report", new { page = Model.TotalPages, pageSize = 10, userType = ViewData["UserType"] })" title="Última página">
+                            <i class="bi bi-chevron-double-right"></i>
+                        </a>
+                    </li>
+                }
+                else
+                {
+                    <li class="page-item disabled">
+                        <span class="page-link"><i class="bi bi-chevron-right"></i></span>
+                    </li>
+                    <li class="page-item disabled">
+                        <span class="page-link"><i class="bi bi-chevron-double-right"></i></span>
+                    </li>
+                }
+            </ul>
+        </nav>
+    </div>
+}

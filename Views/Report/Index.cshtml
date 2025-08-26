@@ -1,0 +1,200 @@
+@model ElectionAdminPanel.Web.Models.ReportViewModel
+
+@{ 
+    ViewData["Title"] = "Relatórios de Auditoria";
+}
+
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-file-earmark-bar-graph me-2"></i>@ViewData["Title"]
+                    </h4>
+                    <small class="text-light">Visualize e exporte logs de auditoria do sistema</small>
+                </div>
+                <div class="card-body p-0">
+                    <ul class="nav nav-tabs nav-fill border-0" id="reportTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active fw-bold" id="audit-tab" data-bs-toggle="tab" data-bs-target="#audit" type="button" role="tab" aria-controls="audit" aria-selected="true">
+                                <i class="bi bi-list-ul me-2"></i>Todos os Logs
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link fw-bold" id="admin-tab" data-bs-toggle="tab" data-bs-target="#admin" type="button" role="tab" aria-controls="admin" aria-selected="false">
+                                <i class="bi bi-shield-check me-2"></i>Ações Administrativas
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link fw-bold" id="voter-tab" data-bs-toggle="tab" data-bs-target="#voter" type="button" role="tab" aria-controls="voter" aria-selected="false">
+                                <i class="bi bi-person-check me-2"></i>Logs de Votação
+                            </button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content p-3" id="reportTabsContent">
+                        <div class="tab-pane fade show active" id="audit" role="tabpanel" aria-labelledby="audit-tab">
+                            <div class="mb-3">
+                                <h5 class="text-muted">
+                                    <i class="bi bi-info-circle me-2"></i>Todos os Logs de Auditoria
+                                </h5>
+                                <p class="text-muted small">Visualize todos os logs de auditoria do sistema, incluindo ações de administradores e eleitores.</p>
+                            </div>
+                            @{
+                                ViewData["UserType"] = "";
+                                ViewData["TabTitle"] = "Geral";
+                            }
+                            @await Html.PartialAsync("_AuditLogTable", Model.AuditLogs)
+                        </div>
+                        <div class="tab-pane fade" id="admin" role="tabpanel" aria-labelledby="admin-tab">
+                            <div class="mb-3">
+                                <h5 class="text-muted">
+                                    <i class="bi bi-gear me-2"></i>Ações dos Administradores
+                                </h5>
+                                <p class="text-muted small">Logs específicos das ações realizadas pelos administradores do sistema, incluindo criação, edição e exclusão de dados.</p>
+                            </div>
+                            @{
+                                ViewData["UserType"] = "admin";
+                                ViewData["TabTitle"] = "Administradores";
+                            }
+                            @await Html.PartialAsync("_AuditLogTable", Model.AdminLogs)
+                        </div>
+                        <div class="tab-pane fade" id="voter" role="tabpanel" aria-labelledby="voter-tab">
+                            <div class="mb-3">
+                                <h5 class="text-muted">
+                                    <i class="bi bi-ballot me-2"></i>Logs de Votação
+                                </h5>
+                                <p class="text-muted small">Registros das ações realizadas pelos eleitores durante o processo de votação.</p>
+                            </div>
+                            @{
+                                ViewData["UserType"] = "voter";
+                                ViewData["TabTitle"] = "Eleitores";
+                            }
+                            @await Html.PartialAsync("_AuditLogTable", Model.VoterLogs)
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .nav-tabs .nav-link {
+        color: #6c757d;
+        border: none;
+        border-bottom: 3px solid transparent;
+        padding: 1rem 1.5rem;
+    }
+    
+    .nav-tabs .nav-link:hover {
+        border-bottom-color: #dee2e6;
+        color: #495057;
+    }
+    
+    .nav-tabs .nav-link.active {
+        color: #0d6efd;
+        border-bottom-color: #0d6efd;
+        background-color: transparent;
+    }
+    
+    .card {
+        border: none;
+        border-radius: 0.5rem;
+    }
+    
+    .card-header {
+        border-radius: 0.5rem 0.5rem 0 0 !important;
+    }
+    
+    .table-warning {
+        background-color: rgba(255, 193, 7, 0.1) !important;
+    }
+    
+    .loading-spinner {
+        display: none;
+    }
+    
+    .loading .loading-spinner {
+        display: block;
+    }
+    
+    .loading .tab-content {
+        opacity: 0.5;
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
+    // Gerenciar cliques nas abas
+    const tabButtons = document.querySelectorAll('#reportTabs button[data-bs-toggle="tab"]');
+    
+    tabButtons.forEach(function(button) {
+        button.addEventListener('click', function(e) {
+            const targetTab = this.getAttribute('data-bs-target');
+            const userType = targetTab === '#audit' ? '' : 
+                           targetTab === '#admin' ? 'admin' : 'voter';
+            
+            // Verificar se a aba já tem conteúdo carregado
+            const tabContent = document.querySelector(targetTab);
+            const hasContent = tabContent.querySelector('.table tbody tr');
+            
+            if (!hasContent || (hasContent && hasContent.querySelector('.text-center'))) {
+                // Carregar conteúdo da aba se não tiver dados ou tiver mensagem de "nenhum registro"
+                loadTabContent(userType, targetTab);
+            }
+        });
+    });
+    
+    function loadTabContent(userType, targetTab) {
+        const tabPane = document.querySelector(targetTab);
+        
+        // Mostrar loading
+        tabPane.classList.add('loading');
+        
+        // Fazer requisição AJAX
+        const url = '@Url.Action("Index", "Report")' + '?userType=' + userType + '&page=1&pageSize=10';
+        
+        fetch(url)
+            .then(response => response.text())
+            .then(html => {
+                // Parse do HTML retornado
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                
+                // Extrair o conteúdo correto baseado no userType
+                let newContent;
+                if (userType === 'admin') {
+                    newContent = doc.querySelector('#admin').innerHTML;
+                } else if (userType === 'voter') {
+                    newContent = doc.querySelector('#voter').innerHTML;
+                } else {
+                    newContent = doc.querySelector('#audit').innerHTML;
+                }
+                
+                // Atualizar o conteúdo da aba
+                tabPane.innerHTML = newContent;
+                
+                // Remover loading
+                tabPane.classList.remove('loading');
+                
+                // Reinicializar tooltips no novo conteúdo
+                const newTooltips = tabPane.querySelectorAll('[data-bs-toggle="tooltip"]');
+                newTooltips.forEach(function(el) {
+                    new bootstrap.Tooltip(el);
+                });
+            })
+            .catch(error => {
+                console.error('Erro ao carregar dados:', error);
+                tabPane.classList.remove('loading');
+            });
+    }
+});
+</script>

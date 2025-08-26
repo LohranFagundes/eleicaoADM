@@ -1,0 +1,75 @@
+@model ElectionAdminPanel.Web.Models.CandidateModel
+
+@{ 
+    ViewData["Title"] = "Criar Novo Candidato";
+}
+
+<div class="container-fluid mt-4">
+    <h2 class="mb-4"><i class="bi bi-plus-circle me-2"></i>@ViewData["Title"]</h2>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <form asp-action="Create" method="post" enctype="multipart/form-data">
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                <div class="mb-3">
+                    <label asp-for="Name" class="form-label"></label>
+                    <input asp-for="Name" class="form-control" />
+                    <span asp-validation-for="Name" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Number" class="form-label"></label>
+                    <input asp-for="Number" class="form-control" />
+                    <span asp-validation-for="Number" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Description" class="form-label"></label>
+                    <textarea asp-for="Description" class="form-control"></textarea>
+                    <span asp-validation-for="Description" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Biography" class="form-label"></label>
+                    <textarea asp-for="Biography" class="form-control"></textarea>
+                    <span asp-validation-for="Biography" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="PositionId" class="form-label"></label>
+                    <select asp-for="PositionId" class="form-select" asp-items="ViewBag.Positions">
+                        <option value="">-- Selecione um Cargo --</option>
+                    </select>
+                    <span asp-validation-for="PositionId" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="OrderPosition" class="form-label"></label>
+                    <input asp-for="OrderPosition" type="number" class="form-control" />
+                    <span asp-validation-for="OrderPosition" class="text-danger"></span>
+                </div>
+
+                <div class="form-check mb-3">
+                    <input asp-for="IsActive" class="form-check-input" />
+                    <label asp-for="IsActive" class="form-check-label"></label>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="PhotoFile" class="form-label"></label>
+                    <input asp-for="PhotoFile" type="file" class="form-control" />
+                    <span asp-validation-for="PhotoFile" class="text-danger"></span>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-save me-2"></i>Criar</button>
+                    <a asp-action="List" class="btn btn-secondary"><i class="bi bi-arrow-left-circle me-2"></i>Voltar para a Lista</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

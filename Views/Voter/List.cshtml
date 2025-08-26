@@ -1,0 +1,555 @@
+@model IEnumerable<ElectionAdminPanel.Web.Models.VoterModel>
+
+@{ 
+    ViewData["Title"] = "Gerenciar Eleitores";
+}
+
+<div class="container-fluid mt-4">
+    <h2 class="mb-4"><i class="bi bi-people-fill me-2"></i>@ViewData["Title"]</h2>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form asp-action="List" method="get" class="row g-3 align-items-center">
+                <div class="col-md-4">
+                    <label for="search" class="visually-hidden">Buscar</label>
+                    <input type="text" class="form-control" id="search" name="search" value="@ViewBag.Search" placeholder="Buscar por nome, CPF ou email...">
+                </div>
+                <div class="col-md-2">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="isActive" name="isActive" value="true" @(ViewBag.IsActive == true ? "checked" : "")>
+                        <label class="form-check-label" for="isActive">
+                            Ativo
+                        </label>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="isVerified" name="isVerified" value="true" @(ViewBag.IsVerified == true ? "checked" : "")>
+                        <label class="form-check-label" for="isVerified">
+                            Verificado
+                        </label>
+                    </div>
+                </div>
+                <div class="col-md-auto">
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-search me-2"></i>Buscar</button>
+                </div>
+                <div class="col-md-auto">
+                    <a asp-action="List" class="btn btn-outline-secondary"><i class="bi bi-arrow-clockwise me-2"></i>Limpar Filtro</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="mb-0">
+                    <i class="bi bi-people-fill me-2"></i>Lista de Eleitores
+                </h5>
+                <small>Gerencie eleitores e envie notificações por email</small>
+            </div>
+            @if (Model != null && Model.Any())
+            {
+                <div class="btn-group">
+                    <button type="button" class="btn btn-outline-light mass-email-btn" onclick="sendMassEmail()">
+                        <i class="bi bi-envelope-fill me-2"></i>Envio em Massa
+                    </button>
+                    <button type="button" class="btn btn-outline-light" onclick="sendMassPasswordReset()">
+                        <i class="bi bi-key-fill me-2"></i>Reset Senha em Massa
+                    </button>
+                </div>
+            }
+        </div>
+        <div class="card-body">
+            @if (Model != null && Model.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-primary">
+                            <tr>
+                                <th style="width: 25%;">@Html.DisplayNameFor(model => model.Name)</th>
+                                <th style="width: 25%;">@Html.DisplayNameFor(model => model.Email)</th>
+                                <th style="width: 15%;">@Html.DisplayNameFor(model => model.Cpf)</th>
+                                <th style="width: 8%;" class="text-center">@Html.DisplayNameFor(model => model.IsActive)</th>
+                                <th style="width: 8%;" class="text-center">@Html.DisplayNameFor(model => model.IsVerified)</th>
+                                <th style="width: 10%;" class="text-center">Status Voto</th>
+                                <th style="width: 9%;" class="text-center">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td>@Html.DisplayFor(modelItem => item.Name)</td>
+                                    <td>@Html.DisplayFor(modelItem => item.Email)</td>
+                                    <td><code class="small">@Html.DisplayFor(modelItem => item.Cpf)</code></td>
+                                    <td class="text-center">
+                                        @if (item.IsActive)
+                                        {
+                                            <span class="badge bg-success">
+                                                <i class="bi bi-check-circle me-1"></i>Ativo
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger">
+                                                <i class="bi bi-x-circle me-1"></i>Inativo
+                                            </span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        @if (item.IsVerified)
+                                        {
+                                            <span class="badge bg-success">
+                                                <i class="bi bi-patch-check me-1"></i>Sim
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning">
+                                                <i class="bi bi-patch-exclamation me-1"></i>Não
+                                            </span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        @if (!string.IsNullOrEmpty(item.ValidationToken))
+                                        {
+                                            <span class="badge bg-success">
+                                                <i class="bi bi-check2-square me-1"></i>Votou
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">
+                                                <i class="bi bi-square me-1"></i>Não Votou
+                                            </span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="btn-group" role="group">
+                                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-info voter-edit-btn" title="Editar">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-sm btn-warning" title="Redefinir Senha" onclick="sendPasswordReset(@item.Id, '@item.Email')">
+                                                <i class="bi bi-key"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-success individual-email-btn" title="Enviar Email" onclick="sendIndividualEmail(@item.Id, '@item.Email', '@item.Name')">
+                                                <i class="bi bi-envelope"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                @* Pagination *@
+                <nav aria-label="Page navigation example">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item @(ViewBag.HasPreviousPage ? "" : "disabled")">
+                            <a class="page-link" asp-action="List" asp-route-page="@(ViewBag.CurrentPage - 1)" asp-route-search="@ViewBag.Search">Anterior</a>
+                        </li>
+                        @for (int i = 1; i <= ViewBag.TotalPages; i++)
+                        {
+                            <li class="page-item @(i == ViewBag.CurrentPage ? "active" : "")">
+                                <a class="page-link" asp-action="List" asp-route-page="@i" asp-route-search="@ViewBag.Search">@i</a>
+                            </li>
+                        }
+                        <li class="page-item @(ViewBag.HasNextPage ? "" : "disabled")">
+                            <a class="page-link" asp-action="List" asp-route-page="@(ViewBag.CurrentPage + 1)" asp-route-search="@ViewBag.Search">Próxima</a>
+                        </li>
+                    </ul>
+                </nav>
+            }
+            else
+            {
+                <div class="alert alert-info" role="alert">
+                    Nenhum eleitor encontrado com os critérios de busca.
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Envio em Massa -->
+<div class="modal fade" id="massEmailModal" tabindex="-1" aria-labelledby="massEmailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="massEmailModalLabel">
+                    <i class="bi bi-envelope-fill me-2"></i>Envio de Email em Massa
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="massEmailForm">
+                    <div class="mb-3">
+                        <label for="emailSubject" class="form-label">Assunto</label>
+                        <input type="text" class="form-control" id="emailSubject" name="subject" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="emailMessage" class="form-label">Mensagem</label>
+                        <textarea class="form-control" id="emailMessage" name="message" rows="6" required placeholder="Digite sua mensagem aqui..."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="includeActiveOnly" name="includeActiveOnly" checked>
+                            <label class="form-check-label" for="includeActiveOnly">
+                                Enviar apenas para eleitores ativos
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="includeVerifiedOnly" name="includeVerifiedOnly">
+                            <label class="form-check-label" for="includeVerifiedOnly">
+                                Enviar apenas para eleitores verificados
+                            </label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="confirmMassEmail()">
+                    <i class="bi bi-send me-2"></i>Enviar para Todos
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Email Individual -->
+<div class="modal fade" id="individualEmailModal" tabindex="-1" aria-labelledby="individualEmailModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="individualEmailModalLabel">
+                    <i class="bi bi-envelope me-2"></i>Enviar Email
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Para:</strong> <span id="recipientEmail"></span></p>
+                <p><strong>Nome:</strong> <span id="recipientName"></span></p>
+                <form id="individualEmailForm">
+                    <input type="hidden" id="recipientId" name="voterId">
+                    <div class="mb-3">
+                        <label for="individualSubject" class="form-label">Assunto</label>
+                        <input type="text" class="form-control" id="individualSubject" name="subject" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="individualMessage" class="form-label">Mensagem</label>
+                        <textarea class="form-control" id="individualMessage" name="message" rows="4" required></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="confirmIndividualEmail()">
+                    <i class="bi bi-send me-2"></i>Enviar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Confirmação de Reset de Senha -->
+<div class="modal fade" id="passwordResetModal" tabindex="-1" aria-labelledby="passwordResetModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="passwordResetModalLabel">
+                    <i class="bi bi-key me-2"></i>Redefinir Senha
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Deseja enviar um link de redefinição de senha para:</p>
+                <p><strong>Email:</strong> <span id="resetEmail"></span></p>
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Um email será enviado com instruções para redefinir a senha.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-warning" onclick="confirmPasswordReset()">
+                    <i class="bi bi-send me-2"></i>Enviar Link
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentVoterId = null;
+let currentVoterEmail = null;
+
+// Função para envio em massa
+function sendMassEmail() {
+    document.getElementById('massEmailModal').style.display = 'block';
+    var modal = new bootstrap.Modal(document.getElementById('massEmailModal'));
+    modal.show();
+}
+
+// Função para reset de senha em massa
+function sendMassPasswordReset() {
+    if (confirm('Deseja enviar link de redefinição de senha para TODOS os eleitores ativos? Esta ação não pode ser desfeita.')) {
+        fetch('@Url.Action("SendMassPasswordReset", "Voter")', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('success', data.message || 'Links de redefinição enviados com sucesso!');
+            } else {
+                showAlert('danger', data.message || 'Erro ao enviar os links de redefinição.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('danger', 'Erro ao processar solicitação.');
+        });
+    }
+}
+
+// Função para envio individual de email
+function sendIndividualEmail(voterId, email, name) {
+    currentVoterId = voterId;
+    document.getElementById('recipientId').value = voterId;
+    document.getElementById('recipientEmail').textContent = email;
+    document.getElementById('recipientName').textContent = name;
+    
+    var modal = new bootstrap.Modal(document.getElementById('individualEmailModal'));
+    modal.show();
+}
+
+// Função para reset de senha individual
+function sendPasswordReset(voterId, email) {
+    currentVoterId = voterId;
+    currentVoterEmail = email;
+    document.getElementById('resetEmail').textContent = email;
+    
+    var modal = new bootstrap.Modal(document.getElementById('passwordResetModal'));
+    modal.show();
+}
+
+// Confirmar envio em massa
+function confirmMassEmail() {
+    const form = document.getElementById('massEmailForm');
+    const formData = new FormData(form);
+    
+    const data = {
+        subject: formData.get('subject'),
+        body: formData.get('message'),
+        isHtml: false,
+        target: {
+            sendToAllActiveVoters: formData.get('includeActiveOnly') === 'on',
+            sendToAllVerifiedVoters: formData.get('includeVerifiedOnly') === 'on',
+            specificVoterIds: [],
+            specificEmails: []
+        },
+        attachments: []
+    };
+    
+    fetch('@Url.Action("SendMassEmail", "Voter")', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        bootstrap.Modal.getInstance(document.getElementById('massEmailModal')).hide();
+        if (data.success) {
+            showAlert('success', data.message || 'Emails enviados com sucesso!');
+            form.reset();
+        } else {
+            showAlert('danger', data.message || 'Erro ao enviar emails.');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('danger', 'Erro ao processar solicitação.');
+    });
+}
+
+// Confirmar envio individual
+function confirmIndividualEmail() {
+    const form = document.getElementById('individualEmailForm');
+    const formData = new FormData(form);
+    
+    const data = {
+        toEmail: document.getElementById('recipientEmail').textContent,
+        toName: document.getElementById('recipientName').textContent,
+        subject: formData.get('subject'),
+        body: formData.get('message'),
+        isHtml: false,
+        attachments: []
+    };
+    
+    fetch('@Url.Action("SendIndividualEmail", "Voter")', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        bootstrap.Modal.getInstance(document.getElementById('individualEmailModal')).hide();
+        if (data.success) {
+            showAlert('success', data.message || 'Email enviado com sucesso!');
+            form.reset();
+        } else {
+            showAlert('danger', data.message || 'Erro ao enviar email.');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('danger', 'Erro ao processar solicitação.');
+    });
+}
+
+// Confirmar reset de senha
+function confirmPasswordReset() {
+    const data = {
+        toEmail: currentVoterEmail,
+        toName: '', // Nome será obtido pelo sistema via email
+        subject: 'Redefinição de Senha - Sistema de Eleições',
+        body: 'Você recebeu este email porque foi solicitada a redefinição de sua senha no sistema de eleições. Se você não solicitou esta redefinição, pode ignorar este email.',
+        isHtml: false,
+        attachments: []
+    };
+    
+    fetch('@Url.Action("SendPasswordReset", "Voter")', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        bootstrap.Modal.getInstance(document.getElementById('passwordResetModal')).hide();
+        if (data.success) {
+            showAlert('success', data.message || 'Link de redefinição enviado com sucesso!');
+        } else {
+            showAlert('danger', data.message || 'Erro ao enviar link de redefinição.');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('danger', 'Erro ao processar solicitação.');
+    });
+}
+
+// Função para mostrar alertas
+function showAlert(type, message) {
+    const alertHtml = `
+        <div class="alert alert-${type} alert-dismissible fade show mt-3" role="alert">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    `;
+    
+    // Inserir o alerta no topo da página
+    const container = document.querySelector('.container-fluid');
+    const existingAlert = container.querySelector('.alert');
+    if (existingAlert) {
+        existingAlert.remove();
+    }
+    container.insertAdjacentHTML('afterbegin', alertHtml);
+    
+    // Auto-remover após 5 segundos
+    setTimeout(() => {
+        const alert = container.querySelector('.alert');
+        if (alert) {
+            alert.remove();
+        }
+    }, 5000);
+}
+
+// Check for sealed elections and restrict voter actions accordingly
+window.addEventListener('load', function() {
+    checkSealedElectionsForVoters();
+});
+
+async function checkSealedElectionsForVoters() {
+    try {
+        const response = await fetch('/Election/GetSealedElectionsStatus');
+        if (response.ok) {
+            const result = await response.json();
+            if (result.hasSealedElections) {
+                restrictVoterActionsForSealedElections();
+            }
+        }
+    } catch (error) {
+        console.log('Could not check sealed election status:', error);
+    }
+}
+
+function restrictVoterActionsForSealedElections() {
+    // Disable general edit actions (but allow password reset actions)
+    document.querySelectorAll('.voter-edit-btn').forEach(btn => {
+        // Only disable if it's not specifically for email editing
+        if (!btn.getAttribute('title')?.toLowerCase().includes('email')) {
+            btn.classList.add('disabled');
+            btn.setAttribute('aria-disabled', 'true');
+            btn.onclick = function(e) {
+                e.preventDefault();
+                alert('Apenas a edição de emails para redefinição de senha é permitida quando há eleições lacradas.');
+                return false;
+            };
+        }
+    });
+    
+    // Disable mass email (but keep password reset available)
+    document.querySelectorAll('.mass-email-btn').forEach(btn => {
+        btn.classList.add('disabled');
+        btn.setAttribute('aria-disabled', 'true');
+        btn.onclick = function(e) {
+            e.preventDefault();
+            alert('Envio de emails em massa não é permitido quando há eleições lacradas. Use apenas a funcionalidade de redefinição de senha.');
+            return false;
+        };
+    });
+    
+    // Disable individual email (but keep password reset available)
+    document.querySelectorAll('.individual-email-btn').forEach(btn => {
+        btn.classList.add('disabled');
+        btn.setAttribute('aria-disabled', 'true');
+        btn.onclick = function(e) {
+            e.preventDefault();
+            alert('Envio de emails individuais não é permitido quando há eleições lacradas. Use apenas a funcionalidade de redefinição de senha.');
+            return false;
+        };
+    });
+}
+</script>

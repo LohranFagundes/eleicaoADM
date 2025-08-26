@@ -1,0 +1,212 @@
+@model ElectionAdminPanel.Web.Models.PositionListViewModel
+
+@{ 
+    ViewData["Title"] = "Gerenciar Cargos";
+}
+
+<div class="container-fluid mt-4">
+    <h2 class="mb-4"><i class="bi bi-briefcase-fill me-2"></i>@ViewData["Title"]</h2>
+
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form asp-action="List" method="get" class="row g-3 align-items-center">
+                <div class="col-md-4">
+                    <label for="search" class="visually-hidden">Buscar</label>
+                    <input type="text" class="form-control" id="search" name="search" value="@Model.Search" placeholder="Buscar por título...">
+                </div>
+                <div class="col-md-4">
+                    <label for="electionId" class="visually-hidden">Eleição</label>
+                    <select class="form-select" id="electionId" name="electionId" asp-for="ElectionId" asp-items="ViewBag.Elections">
+                        <option value="">Todas as Eleições</option>
+                    </select>
+                </div>
+                <div class="col-md-auto">
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-search me-2"></i>Buscar</button>
+                </div>
+                <div class="col-md-auto">
+                    <a asp-action="List" class="btn btn-outline-secondary"><i class="bi bi-arrow-clockwise me-2"></i>Limpar Filtro</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <a asp-action="Create" class="btn btn-primary" id="createPositionBtn"><i class="bi bi-plus-circle me-2"></i>Criar Novo Cargo</a>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            @if (Model.Positions != null && Model.Positions.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>@Html.DisplayNameFor(model => model.Positions.FirstOrDefault().Title)</th>
+                                <th>@Html.DisplayNameFor(model => model.Positions.FirstOrDefault().Description)</th>
+                                <th>@Html.DisplayNameFor(model => model.Positions.FirstOrDefault().ElectionId)</th>
+                                <th>@Html.DisplayNameFor(model => model.Positions.FirstOrDefault().MaxCandidates)</th>
+                                <th>@Html.DisplayNameFor(model => model.Positions.FirstOrDefault().IsActive)</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.Positions)
+                            {
+                                <tr>
+                                    <td>@Html.DisplayFor(modelItem => item.Title)</td>
+                                    <td>@Html.DisplayFor(modelItem => item.Description)</td>
+                                    <td>@Html.DisplayFor(modelItem => item.ElectionId)</td> @* This will display the ID, ideally we'd show the election title *@
+                                    <td>@Html.DisplayFor(modelItem => item.MaxCandidates)</td>
+                                    <td>
+                                        @if (item.IsActive)
+                                        {
+                                            <span class="badge bg-success">Ativo</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger">Inativo</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning position-edit-btn" title="Editar"><i class="bi bi-pencil"></i></a>
+                                            <button type="button" class="btn btn-sm btn-danger position-delete-btn" data-bs-toggle="modal" data-bs-target="#deleteModal_@item.Id" title="Excluir"><i class="bi bi-trash"></i></button>
+                                        </div>
+
+                                        @* Delete Confirmation Modal *@
+                                        <div class="modal fade" id="deleteModal_@item.Id" tabindex="-1" aria-labelledby="deleteModalLabel_@item.Id" aria-hidden="true">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title" id="deleteModalLabel_@item.Id">Confirmar Exclusão</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <p>Tem certeza de que deseja excluir o cargo <strong>"@item.Title"</strong>?</p>
+                                                        <div class="alert alert-warning">
+                                                            <i class="bi bi-exclamation-triangle me-2"></i>
+                                                            <strong>Atenção:</strong> Esta ação não pode ser desfeita e poderá afetar candidatos associados a este cargo.
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                        <form asp-action="Delete" method="post" style="display:inline;">
+                                                            <input type="hidden" name="id" value="@item.Id" />
+                                                            <button type="submit" class="btn btn-danger">Excluir</button>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                @* Pagination *@
+                <nav aria-label="Page navigation example">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item @(Model.HasPreviousPage ? "" : "disabled")">
+                            <a class="page-link" asp-action="List" asp-route-page="@(Model.CurrentPage - 1)" asp-route-search="@Model.Search" asp-route-electionId="@Model.ElectionId">Anterior</a>
+                        </li>
+                        @for (int i = 1; i <= Model.TotalPages; i++)
+                        {
+                            <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                                <a class="page-link" asp-action="List" asp-route-page="@i" asp-route-search="@Model.Search" asp-route-electionId="@Model.ElectionId">@i</a>
+                            </li>
+                        }
+                        <li class="page-item @(Model.HasNextPage ? "" : "disabled")">
+                            <a class="page-link" asp-action="List" asp-route-page="@(Model.CurrentPage + 1)" asp-route-search="@Model.Search" asp-route-electionId="@Model.ElectionId">Próxima</a>
+                        </li>
+                    </ul>
+                </nav>
+            }
+            else
+            {
+                <div class="alert alert-info" role="alert">
+                    Nenhum cargo encontrado com os critérios de busca.
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        // Check for sealed elections and disable position actions if needed
+        window.addEventListener('load', function() {
+            checkSealedElectionsForPositions();
+        });
+        
+        async function checkSealedElectionsForPositions() {
+            try {
+                const response = await fetch('/Election/GetSealedElectionsStatus');
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.hasSealedElections) {
+                        disablePositionActions();
+                    }
+                }
+            } catch (error) {
+                console.log('Could not check sealed election status:', error);
+            }
+        }
+        
+        function disablePositionActions() {
+            // Disable create button
+            const createBtn = document.getElementById('createPositionBtn');
+            if (createBtn) {
+                createBtn.classList.add('disabled');
+                createBtn.setAttribute('aria-disabled', 'true');
+                createBtn.onclick = function(e) {
+                    e.preventDefault();
+                    alert('Não é possível criar novos cargos quando há eleições lacradas.');
+                    return false;
+                };
+            }
+            
+            // Disable edit and delete buttons
+            document.querySelectorAll('.position-edit-btn').forEach(btn => {
+                btn.classList.add('disabled');
+                btn.setAttribute('aria-disabled', 'true');
+                btn.onclick = function(e) {
+                    e.preventDefault();
+                    alert('Não é possível editar cargos quando há eleições lacradas.');
+                    return false;
+                };
+            });
+            
+            document.querySelectorAll('.position-delete-btn').forEach(btn => {
+                btn.classList.add('disabled');
+                btn.setAttribute('aria-disabled', 'true');
+                btn.onclick = function(e) {
+                    e.preventDefault();
+                    alert('Não é possível excluir cargos quando há eleições lacradas.');
+                    return false;
+                };
+            });
+            
+        }
+    </script>
+}

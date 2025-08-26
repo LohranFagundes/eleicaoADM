@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Election Admin Panel</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="~/css/style.css" />
+    <link rel="stylesheet" href="~/css/custom.css" />
+    <link rel="stylesheet" href="~/css/sealed-elections.css" />
+</head>
+<body>
+    <div class="d-flex" id="wrapper">
+        <!-- Sidebar -->
+        <div class="bg-dark border-right" id="sidebar-wrapper">
+            <div class="sidebar-heading text-white p-3">Election Admin</div>
+            <div class="list-group list-group-flush">
+                <a href="/Home/Index" class="list-group-item list-group-item-action bg-dark text-white"><i class="bi bi-house-door me-2"></i>Dashboard</a>
+                <a href="/Election/List" class="list-group-item list-group-item-action bg-dark text-white"><i class="bi bi-list-check me-2"></i>Eleições</a>
+                <a href="/Voter/List" class="list-group-item list-group-item-action bg-dark text-white"><i class="bi bi-people-fill me-2"></i>Eleitores</a>
+                <a href="/Candidate/List" class="list-group-item list-group-item-action bg-dark text-white"><i class="bi bi-person-badge-fill me-2"></i>Candidatos</a>
+                <a href="/Position/List" class="list-group-item list-group-item-action bg-dark text-white"><i class="bi bi-briefcase-fill me-2"></i>Cargos</a>
+                
+                <div class="list-group-item list-group-item-action bg-dark text-white dropdown" data-bs-toggle="collapse" href="#reports-submenu" role="button" aria-expanded="false" aria-controls="reports-submenu">
+                    <i class="bi bi-bar-chart-fill me-2"></i>Relatórios <i class="bi bi-chevron-down float-end"></i>
+                </div>
+                <div class="collapse" id="reports-submenu">
+                    <a href="/Report/Index" class="list-group-item list-group-item-action bg-dark text-white ps-5">Logs</a>
+                    
+                </div>
+                
+                <!-- Lacrar Sistema -->
+                <a href="#" class="list-group-item list-group-item-action bg-dark text-danger" id="sealSystemBtn" onclick="openSealSystemModal()">
+                    <i class="bi bi-lock-fill me-2"></i>Lacrar Sistema
+                </a>
+            </div>
+        </div>
+        <!-- /#sidebar-wrapper -->
+
+        <!-- Page Content -->
+        <div id="page-content-wrapper">
+            <nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom">
+                <button class="btn btn-primary" id="menu-toggle">
+                    <i class="bi bi-list"></i>
+                </button>
+                <a class="navbar-brand ms-3" href="#">Election Admin Panel</a>
+
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    <ul class="navbar-nav ms-auto mt-2 mt-lg-0">
+                        <!-- Sealed Election Indicator -->
+                        <li class="nav-item" id="sealedElectionIndicator" style="display: none;">
+                            <span class="navbar-text text-danger me-3">
+                                <i class="bi bi-lock-fill me-1"></i>
+                                <strong>SISTEMA LACRADO</strong>
+                                <small class="d-block">Modo Votação Ativo</small>
+                            </span>
+                        </li>
+                        <li class="nav-item">
+                            <span class="navbar-text text-success" id="navbarStatus">
+                                <i class="bi bi-circle-fill me-1"></i>Online
+                            </span>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <i class="bi bi-person-circle me-1"></i> @(User.Identity?.Name ?? "User")
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                                <a class="dropdown-item" href="#">Perfil</a>
+                                <div class="dropdown-divider"></div>
+                                <form asp-controller="Auth" asp-action="Logout" method="post">
+                                    <button type="submit" class="dropdown-item"><i class="bi bi-box-arrow-right me-1"></i> Logout</button>
+                                </form>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <div class="container-fluid">
+                <main role="main" class="pb-3">
+                    @RenderBody()
+                </main>
+            </div>
+        </div>
+        <!-- /#page-content-wrapper -->
+    </div>
+    <!-- /#wrapper -->
+
+    <!-- Modal Lacrar Sistema -->
+    <div class="modal fade" id="sealSystemModal" tabindex="-1" aria-labelledby="sealSystemModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="sealSystemModalLabel">
+                        <i class="bi bi-lock-fill me-2"></i>Lacrar Sistema Eleitoral
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Seção de Aviso Crítico -->
+                    <div class="alert alert-danger" role="alert">
+                        <div class="d-flex">
+                            <div class="flex-shrink-0">
+                                <i class="bi bi-exclamation-triangle-fill fs-4"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="alert-heading mb-2">⚠️ ATENÇÃO - OPERAÇÃO CRÍTICA E IRREVERSÍVEL!</h6>
+                                <p class="mb-2">Ao lacrar o sistema eleitoral, as seguintes restrições serão aplicadas <strong>PERMANENTEMENTE</strong>:</p>
+                                <ul class="mb-0">
+                                    <li><strong>🚫 BLOQUEADOS:</strong> Criação, edição e exclusão de eleições, cargos e candidatos</li>
+                                    <li><strong>🚫 BLOQUEADOS:</strong> Criação e exclusão de eleitores</li>
+                                    <li><strong>✅ PERMITIDOS:</strong> Visualização de todos os dados</li>
+                                    <li><strong>✅ PERMITIDOS:</strong> Edição de email e telefone de eleitores</li>
+                                    <li><strong>✅ PERMITIDOS:</strong> Envio de redefinição de senha para eleitores</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Seção de Seleção de Eleição -->
+                    <div class="card mb-3">
+                        <div class="card-header bg-primary text-white">
+                            <h6 class="mb-0">
+                                <i class="bi bi-ballot-check me-2"></i>Selecionar Eleição para Lacrar
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label for="electionSelect" class="form-label">Escolha a eleição que será lacrada:</label>
+                                <select class="form-select" id="electionSelect" required>
+                                    <option value="">Carregando eleições...</option>
+                                </select>
+                            </div>
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <strong>Importante:</strong> Apenas eleições com status "draft", "scheduled" ou "active" podem ser lacradas.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Seção de Verificação Final -->
+                    <div class="card">
+                        <div class="card-header bg-warning text-dark">
+                            <h6 class="mb-0">
+                                <i class="bi bi-check-circle me-2"></i>Confirmações Obrigatórias
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="verifyElectionData">
+                                <label class="form-check-label" for="verifyElectionData">
+                                    <i class="bi bi-check-circle text-success me-2"></i>Verifiquei que todos os dados da eleição estão corretos e completos
+                                </label>
+                            </div>
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="understandRestrictions">
+                                <label class="form-check-label" for="understandRestrictions">
+                                    <i class="bi bi-check-circle text-success me-2"></i>Compreendo que esta ação bloqueará permanentemente todas as edições do sistema
+                                </label>
+                            </div>
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="confirmIrreversible">
+                                <label class="form-check-label" for="confirmIrreversible">
+                                    <i class="bi bi-check-circle text-success me-2"></i>Confirmo que esta ação é irreversível e que tenho backup dos dados
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="authorizeSealing">
+                                <label class="form-check-label" for="authorizeSealing">
+                                    <i class="bi bi-check-circle text-success me-2"></i>Autorizo o lacre do sistema eleitoral sob minha responsabilidade
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-2"></i>Cancelar
+                    </button>
+                    <button type="button" class="btn btn-danger" id="confirmSealSystemButton" onclick="confirmSealSystem()" disabled>
+                        <i class="bi bi-lock-fill me-2"></i>CONFIRMAR LACRE DO SISTEMA
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/script.js"></script>
+    <script src="~/js/site.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            // Marcar item ativo na sidebar
+            const currentPath = window.location.pathname;
+            $("#sidebar-wrapper .list-group-item").each(function() {
+                const href = $(this).attr("href");
+                if (href && currentPath.includes(href)) {
+                    $(this).addClass("active");
+                }
+            });
+            
+            // Check for sealed elections and show indicator
+            checkSealedElections();
+        });
+        
+        async function checkSealedElections() {
+            try {
+                const response = await fetch('/Election/GetSealedElectionsStatus', {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.hasSealedElections) {
+                        document.getElementById('sealedElectionIndicator').style.display = 'block';
+                        
+                        // Store sealed election state globally
+                        window.hasSealedElections = true;
+                        window.sealedElectionIds = result.sealedElectionIds || [];
+                        
+                        // Hide seal system button when system is already sealed
+                        const sealSystemBtn = document.getElementById('sealSystemBtn');
+                        if (sealSystemBtn) {
+                            sealSystemBtn.style.display = 'none';
+                        }
+                        
+                        // Add warning banner and restrict actions
+                        addSealedElectionWarning();
+                        restrictActionsForSealedElections();
+                    } else {
+                        window.hasSealedElections = false;
+                        window.sealedElectionIds = [];
+                    }
+                }
+            } catch (error) {
+                // Silently fail - sealed election check is not critical for basic functionality
+                console.log('Could not check sealed election status:', error);
+                window.hasSealedElections = false;
+                window.sealedElectionIds = [];
+            }
+        }
+        
+        function addSealedElectionWarning() {
+            const restrictedPages = ['/Candidate/', '/Position/', '/Voter/Create', '/Election/Create', '/Election/Edit'];
+            const currentPath = window.location.pathname;
+            
+            const isRestrictedPage = restrictedPages.some(page => currentPath.includes(page));
+            
+            if (isRestrictedPage && !currentPath.includes('/Voter/Edit')) { // Allow voter email and phone editing
+                const warningBanner = `
+                    <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-exclamation-triangle-fill fs-4 me-3"></i>
+                            <div>
+                                <h6 class="alert-heading mb-1">Sistema Lacrado - Funcionalidade Restrita</h6>
+                                <p class="mb-0">Esta eleição foi lacrada e não permite mais modificações. Apenas consultas e edição de emails e telefones de eleitores estão disponíveis.</p>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                `;
+                
+                const container = document.querySelector('.container-fluid, main');
+                if (container) {
+                    container.insertAdjacentHTML('afterbegin', warningBanner);
+                }
+            }
+        }
+        
+        function restrictActionsForSealedElections() {
+            if (!window.hasSealedElections) return;
+            
+            console.log('[SEAL] Aplicando restrições para eleições lacradas');
+            
+            // Desabilitar botões de criação específicos
+            document.querySelectorAll('#createPositionBtn, #createCandidateBtn, #createElectionBtn, a[href*="/Create"]:not(a[href*="/Voter/Create"]), button[onclick*="create"], button[onclick*="openCreateModal"]').forEach(btn => {
+                if (!btn.textContent.toLowerCase().includes('relat') && !btn.textContent.toLowerCase().includes('export')) {
+                    btn.classList.add('disabled');
+                    btn.setAttribute('aria-disabled', 'true');
+                    btn.style.pointerEvents = 'none';
+                    btn.style.opacity = '0.5';
+                    btn.title = 'Não permitido quando há eleições lacradas';
+                    
+                    // Remove existing onclick handlers and add blocking one
+                    const newBtn = btn.cloneNode(true);
+                    newBtn.onclick = function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        alert('Não é possível criar novos registros quando há eleições lacradas.');
+                        return false;
+                    };
+                    btn.parentNode.replaceChild(newBtn, btn);
+                }
+            });
+            
+            // Desabilitar botões de edição específicos (exceto voter edit para email)
+            document.querySelectorAll('.position-edit-btn, .candidate-edit-btn, .election-edit-btn, a[href*="/Edit"]:not([href*="/Voter/Edit"]), button[onclick*="edit"]:not([onclick*="voter"]), button[onclick*="loadElectionForEdit"]').forEach(btn => {
+                btn.classList.add('disabled');
+                btn.setAttribute('aria-disabled', 'true');
+                btn.style.pointerEvents = 'none';
+                btn.style.opacity = '0.5';
+                btn.title = 'Não permitido quando há eleições lacradas';
+                
+                // Remove existing onclick handlers and add blocking one
+                const newBtn = btn.cloneNode(true);
+                newBtn.onclick = function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    alert('Não é possível editar registros quando há eleições lacradas.');
+                    return false;
+                };
+                btn.parentNode.replaceChild(newBtn, btn);
+            });
+            
+            // Desabilitar botões de exclusão específicos
+            document.querySelectorAll('.position-delete-btn, .candidate-delete-btn, .election-delete-btn, button[onclick*="delete"], button[onclick*="confirmDelete"], .btn-danger:not([onclick*="password"]):not([onclick*="reset"])').forEach(btn => {
+                if (!btn.textContent.toLowerCase().includes('senha') && 
+                    !btn.textContent.toLowerCase().includes('password') && 
+                    !btn.textContent.toLowerCase().includes('reset')) {
+                    btn.classList.add('disabled');
+                    btn.setAttribute('aria-disabled', 'true');
+                    btn.style.pointerEvents = 'none';
+                    btn.style.opacity = '0.5';
+                    btn.title = 'Não permitido quando há eleições lacradas';
+                    
+                    // Remove existing onclick handlers and add blocking one
+                    const newBtn = btn.cloneNode(true);
+                    newBtn.onclick = function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        alert('Não é possível excluir registros quando há eleições lacradas.');
+                        return false;
+                    };
+                    btn.parentNode.replaceChild(newBtn, btn);
+                }
+            });
+            
+            // Desabilitar botões de alteração de status das eleições
+            document.querySelectorAll('button[onclick*="updateStatus"], .dropdown-toggle[title*="Status"]').forEach(btn => {
+                btn.classList.add('disabled');
+                btn.setAttribute('aria-disabled', 'true');
+                btn.style.pointerEvents = 'none';
+                btn.style.opacity = '0.5';
+                btn.title = 'Não permitido quando há eleições lacradas';
+                
+                const newBtn = btn.cloneNode(true);
+                newBtn.onclick = function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    alert('Não é possível alterar status quando há eleições lacradas.');
+                    return false;
+                };
+                btn.parentNode.replaceChild(newBtn, btn);
+            });
+            
+            // Desabilitar links de dropdown para mudança de status
+            document.querySelectorAll('a[onclick*="updateStatus"]').forEach(link => {
+                link.classList.add('disabled');
+                link.style.pointerEvents = 'none';
+                link.style.opacity = '0.5';
+                
+                const newLink = link.cloneNode(true);
+                newLink.onclick = function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    alert('Não é possível alterar status quando há eleições lacradas.');
+                    return false;
+                };
+                link.parentNode.replaceChild(newLink, link);
+            });
+            
+            // Desabilitar envio de emails em massa (mas não redefinição de senha)
+            document.querySelectorAll('.mass-email-btn, .individual-email-btn').forEach(btn => {
+                if (!btn.textContent.toLowerCase().includes('senha') && 
+                    !btn.textContent.toLowerCase().includes('password') && 
+                    !btn.textContent.toLowerCase().includes('reset')) {
+                    btn.classList.add('disabled');
+                    btn.setAttribute('aria-disabled', 'true');
+                    btn.style.pointerEvents = 'none';
+                    btn.style.opacity = '0.5';
+                    
+                    const newBtn = btn.cloneNode(true);
+                    newBtn.onclick = function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        alert('Envio de emails não é permitido quando há eleições lacradas. Use apenas a funcionalidade de redefinição de senha.');
+                        return false;
+                    };
+                    btn.parentNode.replaceChild(newBtn, btn);
+                }
+            });
+            
+            // Interceptar submissões de formulários que não são permitidos
+            document.querySelectorAll('form').forEach(form => {
+                const action = form.action || form.getAttribute('action') || '';
+                const method = form.method || 'GET';
+                
+                if (method.toLowerCase() === 'post' && 
+                    (action.includes('/Create') || action.includes('/Edit') || action.includes('/Delete') || action.includes('/UpdateStatus')) &&
+                    !action.includes('/Voter/Edit') && !action.includes('/SendPassword') && !action.includes('/SendMassPasswordReset')) {
+                    
+                    form.addEventListener('submit', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        alert('Esta ação não é permitida quando há eleições lacradas.');
+                        return false;
+                    });
+                    
+                    // Disable form submit buttons too
+                    form.querySelectorAll('button[type="submit"], input[type="submit"]').forEach(submitBtn => {
+                        submitBtn.disabled = true;
+                        submitBtn.style.opacity = '0.5';
+                        submitBtn.title = 'Não permitido quando há eleições lacradas';
+                    });
+                }
+            });
+            
+            console.log('[SEAL] Restrições aplicadas com sucesso');
+        }
+        
+        // ===== SISTEMA DE LACRE ELEITORAL =====
+        let selectedElectionId = null;
+
+        async function openSealSystemModal() {
+            try {
+                // Carregar eleições disponíveis para lacrar
+                await loadElectionsForSealing();
+                
+                // Reset form
+                resetSealForm();
+                
+                // Mostrar modal
+                const sealModal = new bootstrap.Modal(document.getElementById('sealSystemModal'));
+                sealModal.show();
+            } catch (error) {
+                console.error('Error opening seal modal:', error);
+                alert('Erro ao carregar dados para lacre do sistema.');
+            }
+        }
+
+        async function loadElectionsForSealing() {
+            try {
+                const electionSelect = document.getElementById('electionSelect');
+                if (!electionSelect) {
+                    return;
+                }
+                
+                const response = await fetch('/Election/GetElectionsForSealing', {
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const elections = await response.json();
+                    
+                    // Limpar select
+                    electionSelect.innerHTML = '<option value="">Selecione uma eleição para lacrar...</option>';
+                    
+                    if (elections && elections.length > 0) {
+                        elections.forEach(election => {
+                            const option = document.createElement('option');
+                            option.value = election.id;
+                            option.textContent = `${election.title} (${election.status})`;
+                            electionSelect.appendChild(option);
+                        });
+                    } else {
+                        electionSelect.innerHTML = '<option value="">Nenhuma eleição disponível para lacrar</option>';
+                    }
+                } else {
+                    electionSelect.innerHTML = '<option value="">Erro ao carregar eleições</option>';
+                }
+            } catch (error) {
+                const electionSelect = document.getElementById('electionSelect');
+                if (electionSelect) {
+                    electionSelect.innerHTML = '<option value="">Erro de conexão</option>';
+                }
+            }
+        }
+
+        function resetSealForm() {
+            // Reset checkboxes
+            document.getElementById('verifyElectionData').checked = false;
+            document.getElementById('understandRestrictions').checked = false;
+            document.getElementById('confirmIrreversible').checked = false;
+            document.getElementById('authorizeSealing').checked = false;
+            
+            // Reset election selection
+            selectedElectionId = null;
+            document.getElementById('electionSelect').value = '';
+            
+            // Disable confirm button
+            document.getElementById('confirmSealSystemButton').disabled = true;
+        }
+
+        // Event listener para seleção de eleição
+        document.addEventListener('DOMContentLoaded', function() {
+            const electionSelect = document.getElementById('electionSelect');
+            if (electionSelect) {
+                electionSelect.addEventListener('change', function() {
+                    selectedElectionId = this.value;
+                    validateSealForm();
+                });
+            }
+
+            // Event listeners para checkboxes
+            const checkboxIds = ['verifyElectionData', 'understandRestrictions', 'confirmIrreversible', 'authorizeSealing'];
+            checkboxIds.forEach(checkboxId => {
+                const checkbox = document.getElementById(checkboxId);
+                if (checkbox) {
+                    checkbox.addEventListener('change', validateSealForm);
+                }
+            });
+        });
+
+        function validateSealForm() {
+            const checkboxIds = ['verifyElectionData', 'understandRestrictions', 'confirmIrreversible', 'authorizeSealing'];
+            const allChecked = checkboxIds.every(id => document.getElementById(id)?.checked);
+            const electionSelected = selectedElectionId && selectedElectionId !== '';
+            
+            const confirmButton = document.getElementById('confirmSealSystemButton');
+            if (confirmButton) {
+                confirmButton.disabled = !(allChecked && electionSelected);
+            }
+        }
+
+        async function confirmSealSystem() {
+            if (!selectedElectionId) {
+                alert('Por favor, selecione uma eleição para lacrar.');
+                return;
+            }
+
+            // Confirmação final
+            const confirmMessage = `
+CONFIRMAÇÃO FINAL DE LACRE DO SISTEMA
+
+⚠️  ESTA AÇÃO É IRREVERSÍVEL! ⚠️
+
+\\u2022 Eleição ID: ${selectedElectionId}
+\\u2022 Após o lacre, apenas visualização e redefinição de senhas serão permitidas
+\\u2022 Nenhuma edição ou criação será mais possível
+
+Tem certeza ABSOLUTA que deseja lacrar o sistema?`;
+
+            if (!confirm(confirmMessage)) {
+                return;
+            }
+
+            try {
+                // Chamar endpoint do controller que tem autorização
+                const response = await fetch(`/Election/SealElection/${selectedElectionId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        confirmedChecks: {
+                            verifyInformation: true,
+                            understandIrreversible: true,
+                            haveBackup: true
+                        }
+                    })
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        // Fechar modal
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('sealSystemModal'));
+                        if (modal) {
+                            modal.hide();
+                        }
+                        
+                        // Mostrar sucesso
+                        alert(`✅ SISTEMA LACRADO COM SUCESSO!
+                        
+🔒 Eleição ID: ${selectedElectionId}
+📅 Lacrado em: ${new Date().toLocaleString()}
+
+O sistema agora está em modo de votação. Apenas visualização e redefinição de senhas estão disponíveis.`);
+                        
+                        // Recarregar página para aplicar restrições
+                        window.location.reload();
+                    } else {
+                        alert('❌ Erro ao lacrar sistema: ' + (result.message || 'Erro desconhecido'));
+                    }
+                } else {
+                    const errorText = await response.text();
+                    console.error('Server response:', response.status, errorText);
+                    alert('❌ Erro na comunicação com o servidor: ' + response.status + ' - ' + errorText);
+                }
+            } catch (error) {
+                console.error('Error sealing system:', error);
+                alert('❌ Erro de conexão: ' + error.message);
+            }
+        }
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

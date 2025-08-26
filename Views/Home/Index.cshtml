@@ -1,0 +1,46 @@
+@{
+    ViewData["Title"] = "Bem-vindo ao Painel Administrativo";
+}
+
+<div class="container-fluid mt-4">
+    <div class="jumbotron bg-light p-5 rounded-lg m-3">
+        <h1 class="display-4">Bem-vindo ao Painel Administrativo!</h1>
+        <p class="lead">Utilize o menu lateral para navegar pelas funcionalidades do sistema.</p>
+        <hr class="my-4">
+        <p>Este painel permite gerenciar eleições, eleitores, candidatos e muito mais.</p>
+        <a class="btn btn-primary btn-lg" href="/Election/List" role="button"><i class="bi bi-list-check me-2"></i>Gerenciar Eleições</a>
+    </div>
+
+    <div class="row mt-5">
+        <div class="col-md-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body text-center">
+                    <i class="bi bi-people-fill display-1 text-primary"></i>
+                    <h5 class="card-title mt-3">Eleitores</h5>
+                    <p class="card-text">Gerencie os eleitores cadastrados no sistema.</p>
+                    <a href="/Voter/List" class="btn btn-outline-primary">Gerenciar Eleitores</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body text-center">
+                    <i class="bi bi-person-badge-fill display-1 text-success"></i>
+                    <h5 class="card-title mt-3">Candidatos</h5>
+                    <p class="card-text">Administre os candidatos de cada eleição.</p>
+                    <a href="/Candidate/List" class="btn btn-outline-success">Gerenciar Candidatos</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body text-center">
+                    <i class="bi bi-bar-chart-fill display-1 text-info"></i>
+                    <h5 class="card-title mt-3">Relatórios</h5>
+                    <p class="card-text">Acesse relatórios e estatísticas das eleições.</p>
+                    <a href="/Report/Index" class="btn btn-outline-info">Acessar Relatórios</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

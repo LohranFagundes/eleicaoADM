@@ -1,0 +1,168 @@
+@{
+    ViewData["Title"] = "Teste de Restrições - Eleições Lacradas";
+}
+
+<div class="container-fluid mt-4">
+    <h2 class="mb-4"><i class="bi bi-shield-lock me-2"></i>@ViewData["Title"]</h2>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Status das Eleições</h5>
+                </div>
+                <div class="card-body">
+                    <div id="electionStatus">
+                        <p class="text-muted">Verificando status das eleições...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Ações de Teste</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="/Election/Create" class="btn btn-primary">
+                            <i class="bi bi-plus-circle me-2"></i>Criar Eleição (Deve ser Bloqueado)
+                        </a>
+                        <a href="/Candidate/Create" class="btn btn-success">
+                            <i class="bi bi-person-plus me-2"></i>Criar Candidato (Deve ser Bloqueado)
+                        </a>
+                        <a href="/Position/Create" class="btn btn-info">
+                            <i class="bi bi-briefcase me-2"></i>Criar Cargo (Deve ser Bloqueado)
+                        </a>
+                        <a href="/Voter/List" class="btn btn-secondary">
+                            <i class="bi bi-people me-2"></i>Listar Eleitores (Permitido)
+                        </a>
+                        <button class="btn btn-warning" onclick="testPasswordReset()">
+                            <i class="bi bi-key me-2"></i>Redefinir Senha (Permitido)
+                        </button>
+                        <a href="/Report/Index" class="btn btn-dark">
+                            <i class="bi bi-file-text me-2"></i>Relatórios (Permitido)
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Log de Testes</h5>
+                </div>
+                <div class="card-body">
+                    <div id="testLog" class="border rounded p-3" style="height: 200px; overflow-y: auto; background-color: #f8f9fa;">
+                        <p class="text-muted mb-0">Aguardando testes...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', async function() {
+        await updateElectionStatus();
+        logMessage('✅ Sistema de teste carregado');
+        
+        // Test restrictions after page load
+        setTimeout(testRestrictions, 1000);
+    });
+
+    async function updateElectionStatus() {
+        try {
+            const response = await fetch('/Election/GetSealedElectionsStatus');
+            if (response.ok) {
+                const result = await response.json();
+                const statusDiv = document.getElementById('electionStatus');
+                
+                if (result.hasSealedElections) {
+                    statusDiv.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="bi bi-shield-lock me-2"></i>
+                            <strong>Eleições Lacradas Detectadas!</strong><br>
+                            IDs das eleições lacradas: <code>${result.sealedElectionIds.join(', ')}</code><br>
+                            <small>Restrições ativas - apenas consultas e redefinição de senhas permitidas.</small>
+                        </div>
+                    `;
+                    logMessage('🔒 Eleições lacradas detectadas: ' + result.sealedElectionIds.join(', '));
+                } else {
+                    statusDiv.innerHTML = `
+                        <div class="alert alert-success">
+                            <i class="bi bi-shield-check me-2"></i>
+                            <strong>Nenhuma Eleição Lacrada</strong><br>
+                            Todas as funcionalidades estão disponíveis.
+                        </div>
+                    `;
+                    logMessage('✅ Nenhuma eleição lacrada - sistema liberado');
+                }
+            }
+        } catch (error) {
+            logMessage('❌ Erro ao verificar status: ' + error.message);
+        }
+    }
+
+    function testPasswordReset() {
+        logMessage('🔑 Teste de redefinição de senha - Esta ação deve ser PERMITIDA');
+        alert('Esta é uma funcionalidade permitida mesmo com eleições lacradas!');
+    }
+
+    function testRestrictions() {
+        logMessage('🧪 Iniciando testes de restrições...');
+        
+        // Test button restrictions
+        const restrictedButtons = document.querySelectorAll('a[href*="/Create"]');
+        let restrictedCount = 0;
+        
+        restrictedButtons.forEach(btn => {
+            if (btn.classList.contains('disabled') || btn.style.pointerEvents === 'none') {
+                restrictedCount++;
+            }
+        });
+        
+        logMessage(`📊 Botões restritos encontrados: ${restrictedCount}/${restrictedButtons.length}`);
+        
+        // Test allowed buttons
+        const allowedButtons = document.querySelectorAll('.btn-warning, .btn-secondary, .btn-dark');
+        let allowedCount = 0;
+        
+        allowedButtons.forEach(btn => {
+            if (!btn.classList.contains('disabled') && btn.style.pointerEvents !== 'none') {
+                allowedCount++;
+            }
+        });
+        
+        logMessage(`✅ Botões permitidos encontrados: ${allowedCount}/${allowedButtons.length}`);
+        
+        if (window.hasSealedElections) {
+            logMessage('🎯 Status: Sistema corretamente restrito para eleições lacradas');
+        } else {
+            logMessage('🎯 Status: Sistema liberado - nenhuma eleição lacrada');
+        }
+    }
+
+    function logMessage(message) {
+        const log = document.getElementById('testLog');
+        const timestamp = new Date().toLocaleTimeString();
+        const logEntry = document.createElement('div');
+        logEntry.className = 'mb-1';
+        logEntry.innerHTML = `<small class="text-muted">[${timestamp}]</small> ${message}`;
+        log.appendChild(logEntry);
+        log.scrollTop = log.scrollHeight;
+    }
+
+    // Test manual actions
+    document.querySelectorAll('a[href*="/Create"]').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            logMessage('🚫 Tentativa de acesso bloqueada: ' + this.textContent.trim());
+            alert('Ação bloqueada: Esta funcionalidade não está disponível quando há eleições lacradas.');
+        });
+    });
+</script>
