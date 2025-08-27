@@ -27,7 +27,7 @@ out/
 # Logs
 *.log
 logs/
-docs/
+docs/ 
 
 # Runtime data
 pids

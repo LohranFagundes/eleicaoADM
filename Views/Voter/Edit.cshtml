@@ -7,6 +7,14 @@
 <div class="container-fluid mt-4">
     <h2 class="mb-4"><i class="bi bi-pencil-square me-2"></i>@ViewData["Title"]</h2>
 
+    @if(ViewBag.HasSealedElections == true)
+    {
+        <div class="alert alert-warning" role="alert">
+            <i class="bi bi-info-circle me-2"></i>
+            <strong>Eleições Seladas:</strong> Apenas o campo <strong>Email</strong> pode ser editado para permitir redefinição de senha.
+        </div>
+    }
+
     <div class="card shadow-sm">
         <div class="card-body">
             <form asp-action="Edit" method="post">
@@ -27,11 +35,23 @@
                     <label asp-for="Email" class="form-label"></label>
                     <input asp-for="Email" class="form-control" />
                     <span asp-validation-for="Email" class="text-danger"></span>
+                    @if(ViewBag.HasSealedElections == true)
+                    {
+                        <small class="form-text text-info">Este campo pode ser editado para facilitar redefinição de senha.</small>
+                    }
                 </div>
 
                 <div class="mb-3">
                     <label asp-for="Phone" class="form-label"></label>
-                    <input asp-for="Phone" class="form-control" />
+                    @if(ViewBag.HasSealedElections == true)
+                    {
+                        <input asp-for="Phone" class="form-control" readonly />
+                        <small class="form-text text-muted">Telefone não pode ser editado quando há eleições seladas.</small>
+                    }
+                    else
+                    {
+                        <input asp-for="Phone" class="form-control" />
+                    }
                     <span asp-validation-for="Phone" class="text-danger"></span>
                 </div>
 

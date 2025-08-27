@@ -143,7 +143,10 @@
                                     </td>
                                     <td class="text-center">
                                         <div class="btn-group" role="group">
-                                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-info voter-edit-btn" title="Editar">
+                                            <button type="button" class="btn btn-sm btn-primary edit-email-btn" title="Editar Email" onclick="editVoterEmail(@item.Id, '@item.Email', '@item.Name')">
+                                                <i class="bi bi-envelope-at"></i>
+                                            </button>
+                                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-info voter-edit-btn" title="Editar Completo">
                                                 <i class="bi bi-pencil"></i>
                                             </a>
                                             <button type="button" class="btn btn-sm btn-warning" title="Redefinir Senha" onclick="sendPasswordReset(@item.Id, '@item.Email')">
@@ -271,6 +274,41 @@
     </div>
 </div>
 
+<!-- Modal para Edição de Email -->
+<div class="modal fade" id="editEmailModal" tabindex="-1" aria-labelledby="editEmailModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editEmailModalLabel">
+                    <i class="bi bi-envelope-at me-2"></i>Editar Email
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Eleitor:</strong> <span id="editEmailVoterName"></span></p>
+                <p><strong>Email Atual:</strong> <span id="editEmailCurrentEmail"></span></p>
+                <form id="editEmailForm">
+                    <input type="hidden" id="editEmailVoterId" name="voterId">
+                    <div class="mb-3">
+                        <label for="newEmail" class="form-label">Novo Email</label>
+                        <input type="email" class="form-control" id="newEmail" name="newEmail" required>
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Este email será usado para redefinição de senha e comunicações do sistema.
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="confirmEmailUpdate()">
+                    <i class="bi bi-save me-2"></i>Atualizar Email
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Modal para Confirmação de Reset de Senha -->
 <div class="modal fade" id="passwordResetModal" tabindex="-1" aria-labelledby="passwordResetModalLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -333,6 +371,60 @@ function sendMassPasswordReset() {
             showAlert('danger', 'Erro ao processar solicitação.');
         });
     }
+}
+
+// Função para editar email do eleitor
+function editVoterEmail(voterId, currentEmail, voterName) {
+    document.getElementById('editEmailVoterId').value = voterId;
+    document.getElementById('editEmailVoterName').textContent = voterName;
+    document.getElementById('editEmailCurrentEmail').textContent = currentEmail;
+    document.getElementById('newEmail').value = currentEmail; // Pre-fill with current email
+    
+    var modal = new bootstrap.Modal(document.getElementById('editEmailModal'));
+    modal.show();
+}
+
+// Função para confirmar atualização do email
+function confirmEmailUpdate() {
+    const form = document.getElementById('editEmailForm');
+    const formData = new FormData(form);
+    
+    const data = {
+        voterId: parseInt(document.getElementById('editEmailVoterId').value),
+        newEmail: formData.get('newEmail')
+    };
+    
+    // Validar email
+    if (!data.newEmail || !data.newEmail.includes('@@')) {
+        showAlert('danger', 'Por favor, insira um email válido.');
+        return;
+    }
+    
+    fetch('@Url.Action("UpdateEmail", "Voter")', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        bootstrap.Modal.getInstance(document.getElementById('editEmailModal')).hide();
+        if (data.success) {
+            showAlert('success', data.message || 'Email atualizado com sucesso!');
+            // Refresh page to show updated email
+            setTimeout(() => {
+                window.location.reload();
+            }, 2000);
+        } else {
+            showAlert('danger', data.message || 'Erro ao atualizar email.');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('danger', 'Erro ao processar solicitação.');
+    });
 }
 
 // Função para envio individual de email
@@ -516,18 +608,15 @@ async function checkSealedElectionsForVoters() {
 }
 
 function restrictVoterActionsForSealedElections() {
-    // Disable general edit actions (but allow password reset actions)
+    // Disable general edit actions (but keep email editing and password reset available)
     document.querySelectorAll('.voter-edit-btn').forEach(btn => {
-        // Only disable if it's not specifically for email editing
-        if (!btn.getAttribute('title')?.toLowerCase().includes('email')) {
-            btn.classList.add('disabled');
-            btn.setAttribute('aria-disabled', 'true');
-            btn.onclick = function(e) {
-                e.preventDefault();
-                alert('Apenas a edição de emails para redefinição de senha é permitida quando há eleições lacradas.');
-                return false;
-            };
-        }
+        btn.classList.add('disabled');
+        btn.setAttribute('aria-disabled', 'true');
+        btn.onclick = function(e) {
+            e.preventDefault();
+            alert('Edição completa não é permitida quando há eleições lacradas. Use o botão específico para editar apenas o email.');
+            return false;
+        };
     });
     
     // Disable mass email (but keep password reset available)

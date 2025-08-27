@@ -167,16 +167,33 @@ namespace ElectionAdminPanel.Web.Controllers
             if (ModelState.IsValid)
             {
                 var client = CreateAuthorizedClient();
-                // Send all editable fields from API documentation
-                var updateData = new 
+                
+                // Check if there are sealed elections to limit what can be edited
+                var hasSealedElections = await _sealedElectionService.HasSealedElectionsAsync();
+                
+                object updateData;
+                if (hasSealedElections)
                 {
-                    name = model.Name,
-                    email = model.Email, 
-                    cpf = model.Cpf,
-                    phone = model.Phone,
-                    voteWeight = model.VoteWeight,
-                    isActive = model.IsActive
-                };
+                    // When there are sealed elections, only allow email to be updated
+                    updateData = new 
+                    {
+                        email = model.Email
+                    };
+                }
+                else
+                {
+                    // Send all editable fields from API documentation
+                    updateData = new 
+                    {
+                        name = model.Name,
+                        email = model.Email, 
+                        cpf = model.Cpf,
+                        phone = model.Phone,
+                        voteWeight = model.VoteWeight,
+                        isActive = model.IsActive
+                    };
+                }
+                
                 var content = new StringContent(JsonConvert.SerializeObject(updateData), Encoding.UTF8, "application/json");
                 var response = await client.PutAsync($"{_apiBaseUrl}/{id}", content);
 
@@ -186,7 +203,14 @@ namespace ElectionAdminPanel.Web.Controllers
                     var apiResponse = JsonConvert.DeserializeObject<Models.ApiResponse<VoterModel>>(responseContent);
                     if (apiResponse != null && apiResponse.Success)
                     {
-                        TempData["SuccessMessage"] = "Eleitor atualizado com sucesso!";
+                        if (hasSealedElections)
+                        {
+                            TempData["SuccessMessage"] = "Email do eleitor atualizado com sucesso! Este email será usado para redefinição de senha.";
+                        }
+                        else
+                        {
+                            TempData["SuccessMessage"] = "Eleitor atualizado com sucesso!";
+                        }
                         return RedirectToAction("List");
                     }
                     ModelState.AddModelError(string.Empty, apiResponse?.Message ?? "An unknown error occurred.");
@@ -197,6 +221,9 @@ namespace ElectionAdminPanel.Web.Controllers
                     ModelState.AddModelError(string.Empty, $"API Error: {response.StatusCode} - {errorContent}");
                 }
             }
+            
+            // Pass sealed election information to view in case of errors
+            ViewBag.HasSealedElections = await _sealedElectionService.HasSealedElectionsAsync();
             return View(model);
         }
 
@@ -369,6 +396,61 @@ namespace ElectionAdminPanel.Web.Controllers
                 {
                     var errorContent = await response.Content.ReadAsStringAsync();
                     return Json(new { success = false, message = $"Erro ao conectar com a API. Status: {response.StatusCode}" });
+                }
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = $"Erro interno: {ex.Message}" });
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> UpdateEmail([FromBody] UpdateEmailRequest request)
+        {
+            try
+            {
+                var client = CreateAuthorizedClient();
+                
+                // Send only email field for update
+                var updateData = new 
+                {
+                    email = request.NewEmail
+                };
+                
+                var content = new StringContent(JsonConvert.SerializeObject(updateData), Encoding.UTF8, "application/json");
+                var response = await client.PutAsync($"{_apiBaseUrl}/{request.VoterId}", content);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var responseContent = await response.Content.ReadAsStringAsync();
+                    var apiResponse = JsonConvert.DeserializeObject<Models.ApiResponse<VoterModel>>(responseContent);
+                    if (apiResponse != null && apiResponse.Success)
+                    {
+                        return Json(new { 
+                            success = true, 
+                            message = "Email do eleitor atualizado com sucesso! Este email será usado para redefinição de senha." 
+                        });
+                    }
+                    return Json(new { success = false, message = apiResponse?.Message ?? "An unknown error occurred." });
+                }
+                else
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    try
+                    {
+                        var errorResponse = JsonConvert.DeserializeObject<Models.ApiResponse<object>>(errorContent);
+                        return Json(new { 
+                            success = false, 
+                            message = errorResponse?.Message ?? $"Erro na API: {response.StatusCode}" 
+                        });
+                    }
+                    catch
+                    {
+                        return Json(new { 
+                            success = false, 
+                            message = $"Erro ao conectar com a API. Status: {response.StatusCode}" 
+                        });
+                    }
                 }
             }
             catch (Exception ex)
@@ -603,6 +685,12 @@ namespace ElectionAdminPanel.Web.Controllers
     {
         public string Email { get; set; } = string.Empty;
         public string NewPassword { get; set; } = string.Empty;
+    }
+
+    public class UpdateEmailRequest
+    {
+        public int VoterId { get; set; }
+        public string NewEmail { get; set; } = string.Empty;
     }
 
     public class VoterStatisticsDto

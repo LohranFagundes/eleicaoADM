@@ -300,7 +300,7 @@
             });
             
             // Desabilitar botões de edição específicos (exceto voter edit para email)
-            document.querySelectorAll('.position-edit-btn, .candidate-edit-btn, .election-edit-btn, a[href*="/Edit"]:not([href*="/Voter/Edit"]), button[onclick*="edit"]:not([onclick*="voter"]), button[onclick*="loadElectionForEdit"]').forEach(btn => {
+            document.querySelectorAll('.position-edit-btn, .candidate-edit-btn, .election-edit-btn, a[href*="/Edit"]:not([href*="/Voter/Edit"]), button[onclick*="edit"]:not([onclick*="voter"]):not([onclick*="editVoterEmail"]), button[onclick*="loadElectionForEdit"]').forEach(btn => {
                 btn.classList.add('disabled');
                 btn.setAttribute('aria-disabled', 'true');
                 btn.style.pointerEvents = 'none';
